@@ -1,0 +1,376 @@
+<title>מתכנן מיזוג אוויר</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Secular+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: לוח מהנדס – טופס נתוני מבנה בצד ימין (דביק), תוצאות בצד שמאל; עמודה אחת בטלפון */
+:root {
+  --bg: #f3f6f8;
+  --panel: #ffffff;
+  --ink: #12232e;
+  --muted: #5a6b76;
+  --line: #d6dfe5;
+  --ice: #0f7fa8;        /* קירור */
+  --ice-soft: #e2f1f7;
+  --copper: #b5622d;     /* צנרת נחושת / חימום */
+  --copper-soft: #f7ebe2;
+  --ok: #2c7a4b; --warn: #a86a00; --warn-soft: #fbf1dc;
+  --seg1: #0f7fa8; --seg2: #4fb3d9; --seg3: #b5622d; --seg4: #e0a13c; --seg5: #6c7f8c;
+  --f-display: "Secular One", "Heebo", "Arial Hebrew", sans-serif;
+  --f-body: "Heebo", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d171d; --panel: #14222b; --ink: #e4edf2; --muted: #93a6b2; --line: #263843;
+  --ice: #4fb8e0; --ice-soft: #12303d; --copper: #e08a52; --copper-soft: #33231a;
+  --ok: #5fc78a; --warn: #e8b040; --warn-soft: #33290f;
+  --seg1: #4fb8e0; --seg2: #2b7fa3; --seg3: #e08a52; --seg4: #e8b040; --seg5: #7d929f;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d171d; --panel: #14222b; --ink: #e4edf2; --muted: #93a6b2; --line: #263843;
+  --ice: #4fb8e0; --ice-soft: #12303d; --copper: #e08a52; --copper-soft: #33231a;
+  --ok: #5fc78a; --warn: #e8b040; --warn-soft: #33290f;
+  --seg1: #4fb8e0; --seg2: #2b7fa3; --seg3: #e08a52; --seg4: #e8b040; --seg5: #7d929f;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { direction: rtl; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; margin: 0; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 20px; }
+header.top h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(1.6rem, 3.5vw, 2.2rem); margin: 0; text-wrap: balance; }
+header.top p { margin: 0; color: var(--muted); max-width: 60ch; }
+.num, td.n { font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+.stat b, .kv dd, .equip .kw { font-variant-numeric: tabular-nums; }
+
+.grid { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* טופס */
+form.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: grid; gap: 14px; }
+@media (max-width: 860px) { form.panel { position: static; } }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; }
+legend { font-family: var(--f-display); font-size: 1.05rem; padding: 0; margin-bottom: 6px; color: var(--ice); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+label.check { display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 400; font-size: 0.9rem; }
+input, select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; width: 100%; min-width: 0; }
+input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ice); }
+input[type="number"] { font-family: var(--f-data); direction: ltr; text-align: right; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+.hint { font-size: 0.78rem; color: var(--muted); margin: -4px 0 0; }
+.errors { color: var(--copper); font-size: 0.9rem; margin: 0; padding-inline-start: 18px; }
+button { font: inherit; cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; }
+button.primary { background: var(--ice); border-color: var(--ice); color: #fff; font-weight: 700; }
+:root[data-theme="dark"] button.primary { color: #08161d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #08161d; } }
+
+/* תוצאות */
+.results { display: grid; gap: 22px; min-width: 0; }
+section.block { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; min-width: 0; }
+section.block > h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.25rem; margin: 0 0 12px; }
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+
+.reco { border: 2px solid var(--ice); background: linear-gradient(var(--ice-soft), var(--panel) 70%); }
+.reco h2.sys { font-size: clamp(1.35rem, 2.6vw, 1.75rem) !important; margin: 4px 0 6px !important; color: var(--ink); text-wrap: balance; }
+.reco .why { margin: 0 0 14px; color: var(--muted); max-width: 70ch; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; }
+.stat span { font-size: 0.78rem; color: var(--muted); }
+.stat b { font-size: 1.25rem; font-weight: 700; }
+.stat small { font-size: 0.75rem; color: var(--muted); }
+.stat.heat b { color: var(--copper); }
+
+.equip { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.equip li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; }
+.equip .u { font-weight: 700; }
+.equip .rm { color: var(--muted); font-size: 0.85rem; grid-column: 1; }
+.equip .kw { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 700; color: var(--ice); white-space: nowrap; }
+
+.bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.bar i { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 0.86rem; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend .sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.78rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
+td.n { direction: ltr; text-align: right; white-space: nowrap; }
+td input { padding: 4px 6px; font-size: 0.88rem; }
+td input.area { width: 80px; }
+tfoot td { font-weight: 700; border-bottom: 0; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.opt { border: 1px solid var(--line); border-radius: 9px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.opt.is-reco { border-color: var(--ice); box-shadow: 0 0 0 1px var(--ice) inset; }
+.opt h3 { margin: 0; font-size: 1.02rem; line-height: 1.35; }
+.pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--ice-soft); color: var(--ice); }
+.pill.alt { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 10px; font-size: 0.86rem; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 500; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.84rem; }
+@media (max-width: 420px) { .pc { grid-template-columns: 1fr; } }
+.pc ul { margin: 0; padding-inline-start: 16px; }
+.pc b { font-size: 0.78rem; }
+.pc .p b { color: var(--ok); } .pc .c b { color: var(--copper); }
+.brands { font-size: 0.8rem; color: var(--muted); }
+details summary { cursor: pointer; font-size: 0.86rem; color: var(--ice); }
+details ul { margin: 6px 0 0; padding-inline-start: 18px; font-size: 0.85rem; }
+
+.notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.notes li { padding: 9px 12px; border-radius: 7px; background: var(--warn-soft); border-inline-start: 4px solid var(--warn); font-size: 0.9rem; }
+.notes li.info { background: var(--ice-soft); border-color: var(--ice); }
+.assump { font-size: 0.86rem; color: var(--muted); }
+.assump table td, .assump table th { padding: 4px 8px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toast { font-size: 0.85rem; color: var(--ok); }
+footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-top: 1px solid var(--line); padding-top: 12px; max-width: 90ch; }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .3s ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>מתכנן מיזוג אוויר</h1>
+    <p>הזינו את נתוני המבנה – המערכת תחשב עומסי קירור וחימום ותמליץ על מערכת: עיליים, מיני מרכזי, VRF, יחידות גג או צ'ילר, לפי תנאי האקלים והשוק בישראל.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="f" novalidate>
+      <fieldset>
+        <legend>נתוני המבנה</legend>
+        <label>סוג המבנה<select id="buildingType"></select></label>
+        <div class="row2">
+          <label>שטח כולל (מ"ר)<input id="area" type="number" min="8" step="1" value="120" inputmode="decimal"></label>
+          <label>מספר חדרים / חללים<input id="rooms" type="number" min="1" step="1" value="5" inputmode="numeric"></label>
+        </div>
+        <p class="hint" id="roomsHint">במגורים – לפי הספירה הישראלית: הסלון נחשב חדר.</p>
+        <div class="row2">
+          <label>גובה תקרה (מ')<input id="height" type="number" min="2.2" step="0.05" value="2.7" inputmode="decimal"></label>
+          <label>מספר קומות<input id="floors" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
+        </div>
+        <label>אזור בארץ<select id="region"></select></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>מעטפת</legend>
+        <label>בידוד<select id="insulation"></select></label>
+        <label>זיגוג<select id="glazing"></select></label>
+        <label class="check"><input type="checkbox" id="roofExposed"> גג חשוף לשמש (קומה עליונה)</label>
+        <label class="check" id="mamadWrap"><input type="checkbox" id="mamad" checked> יש ממ"ד</label>
+      </fieldset>
+
+      <details id="adv">
+        <summary>נתונים מתקדמים (אופציונלי)</summary>
+        <fieldset style="margin-top:10px">
+          <div class="row2">
+            <label>מספר אנשים<input id="people" type="number" min="0" step="1" placeholder="אוטומטי"></label>
+            <label>ציוד / מכונות (קו"ט)<input id="equipmentKw" type="number" min="0" step="0.5" placeholder="אוטומטי"></label>
+          </div>
+          <label>מחיר חשמל (₪ לקוט"ש)<input id="elecPrice" type="number" min="0.1" step="0.01" value="0.64"></label>
+          <label class="check"><input type="checkbox" id="strictTemp"> נדרשת בקרת טמפרטורה/לחות מדויקת (מזון, תרופות, אלקטרוניקה)</label>
+        </fieldset>
+      </details>
+
+      <ul class="errors" id="errors" hidden></ul>
+      <div class="actions">
+        <button type="button" class="primary" id="copyBtn">העתקת סיכום</button>
+        <button type="button" id="resetRooms">איפוס חלוקת חדרים</button>
+        <span class="toast" id="toast" role="status"></span>
+      </div>
+    </form>
+
+    <main class="results" id="out" aria-live="polite"></main>
+  </div>
+
+  <footer class="disc">
+    הכלי מבצע חישוב עומסים מקורב (שיטת בלוק) לצורך תכנון ראשוני והשוואת חלופות. התפוקות, המחירים וסימוני ה"כ"ס" הם ערכים מקורבים לשוק הישראלי (2025–2026) ומשתנים בין יצרנים.
+    לפני ביצוע נדרש חישוב עומסים מפורט חדר-חדר (ASHRAE / HAP / TRACE), בחירת ציוד לפי קטלוג יצרן ותכנון של מהנדס מיזוג אוויר. התקנה – על ידי טכנאי קירור מוסמך.
+  </footer>
+</div>
+
+<script src="hvac-engine.js"></script>
+<script>
+(function () {
+  const H = window.HVAC;
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = (n, d = 0) => Number(n).toLocaleString('he-IL', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const KINDS = { living: 'סלון', bedroom: 'חדר שינה', mamad: 'ממ"ד', hall: 'אולם', office: 'משרד', zone: 'חלל' };
+
+  function fill(sel, obj, val) {
+    sel.innerHTML = Object.entries(obj).map(([k, v]) => '<option value="' + k + '">' + esc(v.name) + '</option>').join('');
+    sel.value = val;
+  }
+  fill($('buildingType'), H.BUILDING_TYPES, 'apartment');
+  fill($('region'), H.REGIONS, 'coastal');
+  fill($('insulation'), H.INSULATION, 'new');
+  fill($('glazing'), H.GLAZING, 'med');
+
+  let customRooms = null; // רשימת חדרים שנערכה ידנית
+
+  function num(id) { const v = parseFloat($(id).value); return isNaN(v) ? null : v; }
+  function readInput() {
+    return {
+      buildingType: $('buildingType').value, region: $('region').value,
+      insulation: $('insulation').value, glazing: $('glazing').value,
+      area: num('area'), rooms: num('rooms'), height: num('height'), floors: num('floors') || 1,
+      roofExposed: $('roofExposed').checked, mamad: $('mamad').checked,
+      people: num('people'), equipmentKw: num('equipmentKw'), elecPrice: num('elecPrice') || 0.64,
+      strictTemp: $('strictTemp').checked, roomList: customRooms,
+    };
+  }
+
+  function syncTypeDefaults() {
+    const t = H.BUILDING_TYPES[$('buildingType').value];
+    $('roofExposed').checked = t.roof;
+    $('mamadWrap').hidden = t.group !== 'res';
+    $('roomsHint').textContent = t.group === 'res' ? 'במגורים – לפי הספירה הישראלית: הסלון נחשב חדר.' : (t.group === 'ind' ? 'חלל ראשון = האולם; השאר משרדים/חללים נלווים.' : 'כל חלל שדורש שליטה נפרדת (חדר, אזור).');
+    const defaults = { apartment: [120, 5, 2.7, 1], house: [240, 6, 2.8, 2], office: [600, 12, 3.2, 2], retail: [350, 2, 4, 1], restaurant: [180, 2, 3.3, 1], education: [900, 10, 3.4, 2], clinic: [300, 10, 3, 1], industrial: [2000, 4, 8, 1], warehouse: [4000, 2, 10, 1], server: [40, 1, 3, 1] }[$('buildingType').value];
+    if (defaults) { $('area').value = defaults[0]; $('rooms').value = defaults[1]; $('height').value = defaults[2]; $('floors').value = defaults[3]; }
+  }
+
+  let last = null;
+  function run() {
+    const inp = readInput();
+    if (customRooms && customRooms.length !== Math.round(inp.rooms || 0)) customRooms = inp.roomList = null;
+    const r = H.design(inp);
+    const errBox = $('errors');
+    if (!r.ok) { errBox.innerHTML = r.errors.map(e => '<li>' + esc(e) + '</li>').join(''); errBox.hidden = false; return; }
+    errBox.hidden = true;
+    last = r;
+    render(r);
+  }
+
+  function render(r) {
+    const L = r.loads, rec = r.recommended;
+    const total = r.loads.breakdown.reduce((s, b) => s + b.kw, 0) || 1;
+    const segColors = ['var(--seg1)', 'var(--seg2)', 'var(--seg3)', 'var(--seg4)', 'var(--seg5)'];
+    const why = whyText(r);
+    let h = '';
+
+    h += '<section class="block reco"><div class="eyebrow">המערכת המומלצת</div><h2 class="sys">' + esc(rec.name) + '</h2><p class="why">' + esc(why) + '</p>';
+    h += '<div class="stats">'
+      + stat('עומס קירור שיא', fmt(L.peakKw, 1) + ' קו"ט', fmt(L.btu) + ' BTU/h')
+      + stat('עומס בו-זמני למערכת', fmt(L.blockKw, 1) + ' קו"ט', fmt(L.blockKw / H.KW_PER_TR, 1) + ' TR')
+      + stat('צפיפות עומס', fmt(L.wPerM2) + ' W/m²', fmt(L.m2PerTr, 0) + ' מ"ר לטון')
+      + stat('עומס חימום', fmt(L.heatKw, 1) + ' קו"ט', 'חורף ' + r.region.tWinter + '°C', 'heat')
+      + stat('הספק חשמלי', fmt(rec.econ.elecKw, 1) + ' קו"ט', rec.econ.threePhase ? 'חיבור תלת-פאזי' : 'חד-פאזי מספיק')
+      + stat('עלות מותקנת משוערת', '₪' + fmt(rec.econ.costMin / 1000) + 'K–' + fmt(rec.econ.costMax / 1000) + 'K', '≈ ₪' + fmt(rec.econ.costYear) + ' חשמל בשנה')
+      + '</div>';
+    h += '<ul class="equip">' + rec.equipment.map(eqLi).join('') + '</ul></section>';
+
+    h += '<section class="block"><h2>פירוק עומס הקירור</h2><div class="bar" role="img" aria-label="פירוק עומס">'
+      + L.breakdown.map((b, i) => '<i style="width:' + (b.kw / total * 100).toFixed(1) + '%;background:' + segColors[i] + '" title="' + esc(b.name) + '"></i>').join('') + '</div>'
+      + '<ul class="legend">' + L.breakdown.map((b, i) => '<li><span class="sw" style="background:' + segColors[i] + '"></span>' + esc(b.name) + ' <span class="num">' + fmt(b.kw, 1) + ' קו"ט · ' + Math.round(b.kw / total * 100) + '%</span></li>').join('') + '</ul>'
+      + '<p class="assump" style="margin:10px 0 0">מוחשי ' + fmt(L.sensibleKw, 1) + ' קו"ט · כמוס ' + fmt(L.latentKw, 1) + ' קו"ט · SHR ' + L.shr + ' · ' + fmt(L.people) + ' אנשים' + (L.oaM3h ? ' · אוויר צח ' + fmt(L.oaM3h) + ' מ"ק/ש\'' : '') + '</p></section>';
+
+    h += '<section class="block"><h2>חלוקה לחדרים</h2><p class="assump" style="margin:-6px 0 10px">ניתן לערוך שם ושטח של כל חדר – החישוב מתעדכן.</p><div class="tbl"><table><thead><tr><th>חדר / חלל</th><th>שטח (מ"ר)</th><th>קו"ט</th><th>BTU/h</th><th>עילי מתאים</th><th>ספיקה (מ"ק/ש\')</th><th>תריסים</th></tr></thead><tbody>';
+    r.rooms.forEach((rm, i) => {
+      const w = H.CATALOG.wallSplit.find(u => u.kw >= rm.loadKw);
+      h += '<tr><td><input data-i="' + i + '" data-f="name" value="' + esc(rm.name) + '" aria-label="שם חדר"></td><td><input class="area" type="number" min="1" data-i="' + i + '" data-f="area" value="' + rm.area + '" aria-label="שטח"></td><td class="n">' + fmt(rm.loadKw, 2) + '</td><td class="n">' + fmt(rm.btu) + '</td><td>' + (w ? esc(w.label) : '<span style="color:var(--copper)">מעל 3 כ"ס – תעלתי/עומד</span>') + '</td><td class="n">' + fmt(rm.airM3h) + '</td><td class="n">' + rm.grilles + '</td></tr>';
+    });
+    const sa = r.rooms.reduce((s, x) => s + x.area, 0), sk = r.rooms.reduce((s, x) => s + x.loadKw, 0);
+    h += '</tbody><tfoot><tr><td>סה"כ</td><td class="n">' + fmt(sa) + '</td><td class="n">' + fmt(sk, 1) + '</td><td class="n">' + fmt(sk * H.KW_TO_BTU) + '</td><td colspan="3" style="font-weight:400;color:var(--muted)">סכום חדרים > עומס בו-זמני (לא כל החדרים בשיא באותה שעה)</td></tr></tfoot></table></div></section>';
+
+    h += '<section class="block"><h2>השוואת חלופות</h2><div class="opts">' + r.options.map((o, i) => optCard(o, i === 0)).join('') + '</div></section>';
+
+    const allNotes = r.notes.concat(...r.options.map(o => o.warnings));
+    if (allNotes.length) h += '<section class="block"><h2>הערות תכנון</h2><ul class="notes">' + allNotes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul></section>';
+
+    const g = L.geometry;
+    h += '<section class="block assump"><h2>הנחות החישוב</h2><div class="tbl"><table><tbody>'
+      + '<tr><th>תנאי תכן קיץ</th><td>' + esc(r.region.name) + ': ' + r.region.tSummer + '°C יבש / ' + r.region.wbSummer + '°C לח · פנים 24°C, 50% לחות יחסית</td></tr>'
+      + '<tr><th>תנאי תכן חורף</th><td>חוץ ' + r.region.tWinter + '°C · פנים 21°C</td></tr>'
+      + '<tr><th>גאומטריה</th><td>טביעת קומה ' + fmt(g.footprint) + ' מ"ר · קירות חיצוניים ' + fmt(g.wallA) + ' מ"ר · זיגוג ' + fmt(g.glassA) + ' מ"ר · גג ' + fmt(g.roofA) + ' מ"ר · נפח ' + fmt(L.volume) + ' מ"ק</td></tr>'
+      + '<tr><th>מקדמים</th><td>מקדם ביטחון 10% · בו-זמניות ' + r.type.div + ' · שעות הפעלה שקולות ' + fmt(Math.min(8760, r.region.eflh * r.type.use)) + ' בשנה</td></tr>'
+      + '<tr><th>תקנים</th><td>ASHRAE Fundamentals (עומסים), ASHRAE 62.1 (אוויר צח), ת"י 1045 (בידוד), EN 378 / ISO 5149 (ריכוז קרר), הנחיות פיקוד העורף (ממ"ד)</td></tr>'
+      + '</tbody></table></div></section>';
+
+    $('out').innerHTML = h;
+  }
+
+  function stat(label, val, sub, cls) { return '<div class="stat' + (cls ? ' ' + cls : '') + '"><span>' + label + '</span><b>' + val + '</b><small>' + sub + '</small></div>'; }
+  function eqLi(e) { return '<li><span class="u">' + esc(e.unit) + '</span><span class="rm">' + esc(e.room) + (e.extra ? ' · ' + esc(e.extra) : '') + '</span>' + (e.kw != null ? '<span class="kw">' + fmt(e.kw, 1) + ' קו"ט</span>' : '<span></span>') + '</li>'; }
+
+  function optCard(o, isReco) {
+    const e = o.econ;
+    return '<article class="opt' + (isReco ? ' is-reco' : '') + '"><div><span class="pill' + (isReco ? '' : ' alt') + '">' + (isReco ? 'מומלץ' : 'חלופה') + '</span></div><h3>' + esc(o.name) + '</h3>'
+      + '<dl class="kv"><dt>עלות מותקנת</dt><dd>₪' + fmt(e.costMin) + '–' + fmt(e.costMax) + '</dd><dt>יעילות (EER)</dt><dd>' + o.eer + '</dd><dt>הספק חשמלי</dt><dd>' + fmt(e.elecKw, 1) + ' קו"ט</dd><dt>צריכה שנתית</dt><dd>' + fmt(e.kwhYear) + ' קוט"ש ≈ ₪' + fmt(e.costYear) + '</dd></dl>'
+      + '<div class="pc"><div class="p"><b>יתרונות</b><ul>' + o.pros.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div><div class="c"><b>חסרונות</b><ul>' + o.cons.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div></div>'
+      + (isReco ? '' : '<details><summary>פירוט ציוד</summary><ul>' + o.equipment.map(x => '<li>' + esc(x.room) + ': ' + esc(x.unit) + '</li>').join('') + '</ul></details>')
+      + '<div class="brands">מותגים נפוצים בישראל: ' + esc(o.brands.join(' · ')) + '</div></article>';
+  }
+
+  function whyText(r) {
+    const k = r.recommended.key, L = r.loads, n = r.rooms.length, A = r.input.area;
+    const m = {
+      split: n <= 2 ? 'מעט חדרים – יחידה עילית לכל חדר היא הפתרון הזול והפשוט.' : 'אין מקום לתעלות או שהמבנה קטן – עילי בכל חדר, עם אפשרות לשדרג ל-Mini-VRF עם יחידות קיר.',
+      miniCentral: r.type.group === 'res' ? 'דירה של ' + fmt(A) + ' מ"ר עם ' + n + ' חדרים ותקרה שמאפשרת הנמכה – מיני מרכזי הוא הפתרון הנפוץ בישראל: מעבה אחד, תריסים בכל חדר.' : 'עומס קטן (' + fmt(L.blockKw, 1) + ' קו"ט) ומעט חללים – מיני מרכזי מתועל אחד או שניים.',
+      miniVrf: 'מבנה גדול / רב-קומתי (' + fmt(A) + ' מ"ר, ' + n + ' חדרים) – Mini-VRF נותן שליטה נפרדת בכל חדר עם מעבה אחד ויעילות גבוהה.',
+      vrf: 'עומס בינוני (' + fmt(L.blockKw, 0) + ' קו"ט) ו-' + n + ' חללים הדורשים שליטה נפרדת – VRF הוא הסטנדרט במשרדים ובמבנים מסחריים בטווח הזה בישראל.',
+      rooftop: 'חלל פתוח גדול עם מעט אזורי שליטה – יחידות גג מאוחדות זולות ופשוטות, כולל אוויר צח.',
+      chillerAir: 'עומס גדול (' + fmt(L.blockKw, 0) + ' קו"ט) – מעל ~400 קו"ט צ\'ילר מקורר אוויר עם מטפלי אוויר / FCU משתלם יותר מ-VRF ומאפשר בקרת אוויר צח ולחות.',
+      chillerWater: 'עומס גדול מאוד (' + fmt(L.blockKw, 0) + ' קו"ט) – צ\'ילרים מקוררי מים עם מגדלי קירור נותנים את עלות התפעול הנמוכה ביותר.',
+      crac: 'עומס ציוד רציף 24/7 – נדרשים מזגנים מדויקים עם יתירות.',
+      evaporative: 'אקלים יבש ומחסן ללא דרישה לבקרה מדויקת – קירור אוופורטיבי.',
+    };
+    return m[k];
+  }
+
+  function summaryText(r) {
+    const L = r.loads, rec = r.recommended, i = r.input;
+    const lines = [
+      'תכנון מיזוג אוויר – ' + r.type.name + ', ' + i.area + ' מ"ר, ' + r.rooms.length + ' חדרים, גובה ' + i.height + ' מ\', ' + i.floors + ' קומות',
+      'אזור: ' + r.region.name,
+      'עומס קירור שיא: ' + L.peakKw + ' קו"ט (' + fmt(L.btu) + ' BTU/h, ' + L.tr + ' TR) | בו-זמני: ' + L.blockKw + ' קו"ט | חימום: ' + L.heatKw + ' קו"ט',
+      '', 'מערכת מומלצת: ' + rec.name,
+      ...rec.equipment.map(e => '  • ' + e.room + ': ' + e.unit),
+      'עלות משוערת: ₪' + fmt(rec.econ.costMin) + '–' + fmt(rec.econ.costMax) + ' | חשמל: ~₪' + fmt(rec.econ.costYear) + ' בשנה',
+      '', 'חלופות: ' + r.options.slice(1).map(o => o.short).join(', '),
+      '', 'חדרים:', ...r.rooms.map(x => '  • ' + x.name + ' – ' + x.area + ' מ"ר – ' + x.loadKw + ' קו"ט (' + fmt(x.btu) + ' BTU/h)'),
+    ];
+    if (r.notes.length) lines.push('', 'הערות:', ...r.notes.map(n => '  • ' + n));
+    return lines.join('\n');
+  }
+
+  // אירועים
+  $('f').addEventListener('input', e => {
+    if (e.target.id === 'buildingType') { customRooms = null; syncTypeDefaults(); }
+    if (['area', 'rooms', 'buildingType', 'mamad'].includes(e.target.id)) customRooms = null;
+    run();
+  });
+  $('f').addEventListener('submit', e => e.preventDefault());
+  $('out').addEventListener('change', e => {
+    const el = e.target; if (!el.dataset || el.dataset.i == null || !last) return;
+    customRooms = last.rooms.map(x => ({ name: x.name, area: x.area, kind: x.kind }));
+    const i = +el.dataset.i;
+    if (el.dataset.f === 'area') { const v = parseFloat(el.value); if (v > 0) customRooms[i].area = v; }
+    else customRooms[i].name = el.value || customRooms[i].name;
+    if (el.dataset.f === 'area') $('area').value = Math.round(customRooms.reduce((s, x) => s + x.area, 0));
+    run();
+  });
+  $('resetRooms').addEventListener('click', () => { customRooms = null; run(); });
+  $('copyBtn').addEventListener('click', () => {
+    if (!last) return;
+    const t = summaryText(last);
+    const done = msg => { $('toast').textContent = msg; setTimeout(() => { $('toast').textContent = ''; }, 2500); };
+    try {
+      navigator.clipboard.writeText(t).then(() => done('הסיכום הועתק'), () => fallback(t, done));
+    } catch (_) { fallback(t, done); }
+  });
+  function fallback(t, done) {
+    const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+    ta.remove(); done(ok ? 'הסיכום הועתק' : 'לא ניתן להעתיק – סמנו את הטקסט ידנית');
+  }
+
+  syncTypeDefaults();
+  run();
+})();
+</script>
