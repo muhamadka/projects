@@ -81,6 +81,37 @@
   };
   const VRF_SYSTEM_MAX_KW = 3 * 90; // עד ~96HP למערכת (3 מודולים)
 
+  /* ---------- אוויר צח ---------- */
+  // s/l: יעילות השבה מוחשית/כמוסה. ERV עם ליבת אנטלפיה; DOAS עם גלגל השבה + סליל קירור
+  const FRESH_EFF = { none: { s: 0, l: 0 }, mau: { s: 0, l: 0 }, erv: { s: 0.75, l: 0.65 }, doas: { s: 0.70, l: 0.70 } };
+  const FRESH_MODES = {
+    auto: 'אוטומטי (מומלץ)',
+    none: 'ללא – אוורור טבעי בחלונות',
+    mau:  'מאוורר אוויר צח מסונן (ללא השבה)',
+    erv:  'מחליף אוויר עם השבת אנרגיה (ERV)',
+    doas: 'יחידת אוויר צח מטופל (DOAS / FAHU)',
+  };
+  const FRESH_CATALOG = {
+    erv: [150, 250, 350, 500, 650, 800, 1000, 1500, 2000],
+    doas: [2000, 3000, 4000, 6000, 8000, 10000, 15000, 20000, 30000],
+    fan: [200, 400, 600, 1000, 2000, 3000, 5000, 8000, 12000],
+  };
+  function resolveFresh(input, t, reqM3h) {
+    const m = input.freshAir;
+    if (m && m !== 'auto' && FRESH_EFF[m]) return { mode: m, auto: false };
+    let mode;
+    if (t.group === 'res') mode = 'erv';
+    else if (t.group === 'com') mode = reqM3h > 4000 ? 'doas' : 'erv';
+    else mode = input.strictTemp && t.group === 'ind' ? 'doas' : 'mau';
+    return { mode, auto: true };
+  }
+  function sizeAir(list, m3h) {
+    const max = list[list.length - 1];
+    const n = Math.max(1, Math.ceil(m3h / max));
+    const each = list.find(x => x >= m3h / n) || max;
+    return { count: n, each, total: n * each };
+  }
+
   /* ---------- נתוני מערכות: עלות מותקנת מקורבת, יעילות, יתרונות/חסרונות ---------- */
   // cost: ₪ לקו"ט קירור מותקן (טווח מחירים מקורב 2025-2026, כולל התקנה בסיסית) | eer: יעילות עונתית אפקטיבית
   const SYSTEMS = {
@@ -219,12 +250,25 @@
     W.equipment = input.equipmentKw != null && input.equipmentKw > 0 ? input.equipmentKw * 1000 : A * t.equip;
 
     // אוויר צח (מכני) + חדירות
-    const oaLs = people * t.oaP + A * t.oaA;
-    const infLs = t.ach * volume / 3.6;
-    const q = (oaLs + infLs) / 1000; // m³/s
-    const totalAir = 1.2 * q * Math.max(0, reg.hOut - INDOOR.hSummer) * 1000;
-    W.airS = 1.2 * 1.006 * q * dT * 1000;
-    W.airL = Math.max(0, totalAir - W.airS);
+    // אוויר צח: מגורים – ASHRAE 62.2 (‏0.15 ל'/ש' למ"ר + 3.5 ל'/ש' × (חדרי שינה+1)); אחר – ASHRAE 62.1
+    const bedrooms = Math.max(1, Math.round(input.rooms) - 1);
+    const oaReq = t.group === 'res' ? 0.15 * A + 3.5 * (bedrooms + 1) : people * t.oaP + A * t.oaA;
+    const fresh = resolveFresh(input, t, oaReq * 3.6);
+    const oaLs = (t.group === 'res' && fresh.mode === 'none') ? 0 : oaReq;
+    // במגורים עם אוורור מכני החלונות סגורים – חדירות נמוכה יותר
+    const ach = t.group === 'res' && fresh.mode !== 'none' ? t.ach * 0.5 : t.ach;
+    const infLs = ach * volume / 3.6;
+    const dh = Math.max(0, reg.hOut - INDOOR.hSummer);
+    const sens = ls => 1.2 * 1.006 * ls / 1000 * dT * 1000;
+    const tot = ls => 1.2 * ls / 1000 * dh * 1000;
+    const infS = sens(infLs), infL = Math.max(0, tot(infLs) - infS);
+    const oaS = sens(oaLs), oaL = Math.max(0, tot(oaLs) - oaS);
+    const eff = FRESH_EFF[fresh.mode];
+    // חלק עומס האוויר הצח שנשאר על מערכת המיזוג הראשית
+    const toMain = fresh.mode === 'doas' ? 0 : 1;
+    const oaSm = oaS * (1 - eff.s) * toMain, oaLm = oaL * (1 - eff.l) * toMain;
+    W.airS = infS + oaSm;
+    W.airL = infL + oaLm;
 
     const sensible = W.walls + W.roof + W.glassCond + W.solar + W.peopleS + W.lighting + W.equipment + W.airS;
     const latent = W.peopleL + W.airL;
@@ -233,7 +277,9 @@
     const blockKw = peakKw * t.div; // עומס בו-זמני למערכת מרכזית
 
     // חימום (ללא זיכוי רווחים פנימיים – שמרני)
-    const heatW = (ins.uWall * wallA + ins.uRoof * roofA + ins.uGlass * glassA) * dTw + 1.2 * 1.006 * q * dTw * 1000;
+    const heatOa = 1.2 * 1.006 * oaLs / 1000 * dTw * 1000;
+    const heatW = (ins.uWall * wallA + ins.uRoof * roofA + ins.uGlass * glassA) * dTw
+      + 1.2 * 1.006 * infLs / 1000 * dTw * 1000 + heatOa * (1 - eff.s) * toMain;
     const heatKw = heatW * 1.1 / 1000;
 
     const breakdown = [
@@ -251,6 +297,15 @@
       btu: Math.round(peakKw * KW_TO_BTU), tr: round(peakKw / KW_PER_TR, 1),
       wPerM2: Math.round(peakKw * 1000 / A), m2PerTr: round(A / (peakKw / KW_PER_TR), 1),
       people, oaM3h: Math.round(oaLs * 3.6), volume: Math.round(volume),
+      fresh: Object.assign(fresh, {
+        flowLs: Math.round(oaLs), flowM3h: Math.round(oaLs * 3.6), reqM3h: Math.round(oaReq * 3.6),
+        basis: t.group === 'res' ? 'ASHRAE 62.2 – ‏0.15 ל\'/ש\' למ"ר + 3.5 ל\'/ש\' × ' + (bedrooms + 1) : 'ASHRAE 62.1 – ' + t.oaP + ' ל\'/ש\' לאדם + ' + t.oaA + ' ל\'/ש\' למ"ר',
+        untreatedKw: round((oaS + oaL) * 1.1 / 1000, 2),
+        recoveredKw: round((oaS * eff.s + oaL * eff.l) * 1.1 / 1000, 2),
+        mainKw: round((oaSm + oaLm) * 1.1 / 1000, 2),
+        doasCoilKw: fresh.mode === 'doas' ? round((oaS * (1 - eff.s) + oaL * (1 - eff.l)) * 1.1 / 1000, 2) : 0,
+        heatRecoveredKw: round(heatOa * eff.s * 1.1 / 1000, 2),
+      }),
       geometry: { footprint: round(footprint, 0), perimeter: round(perimeter, 0), wallA: round(wallA, 0), glassA: round(glassA, 0), roofA: round(roofA, 0) },
       breakdown, stratFactor,
     };
@@ -297,7 +352,6 @@
         notes.push('גובה התקרה נמוך לתעלות – הוחלף ל-VRF עם יחידות קסטה/קיר.');
         primary = 'vrf';
       }
-      if (loads.oaM3h > 0) notes.push('אוויר צח נדרש: כ-' + loads.oaM3h.toLocaleString('he-IL') + ' מ"ק/ש\' (ASHRAE 62.1). מומלץ מחליף אוויר עם השבת אנרגיה (ERV/HRV) או יחידת אוויר צח מטופל (DOAS).');
     }
     alts = alts.filter((s, i) => s !== primary && alts.indexOf(s) === i);
 
@@ -407,6 +461,105 @@
     return out.map(o => ({ room: o.count === 1 ? o.room : (o.count <= 3 ? o.rooms.join(', ') : o.count + ' חללים (' + o.rooms[0] + ' … ' + o.rooms[o.count - 1] + ')'), unit: o.unit, kw: o.kw, extra: o.extra, count: o.count }));
   }
 
+  function freshAirSolutions(input, loads, rooms, primaryKey) {
+    const t = BUILDING_TYPES[input.buildingType];
+    const reg = REGIONS[input.region];
+    const F = loads.fresh;
+    const req = F.reqM3h;
+    const hours = Math.min(8760, reg.eflh * t.use);
+    const price = input.elecPrice || 0.64;
+    const mainEer = SYSTEMS[primaryKey].eer;
+    const untreated = loads.fresh.untreatedKw || (req / 3.6 / 1000 * 1.2 * Math.max(0, reg.hOut - INDOOR.hSummer) * 1.1);
+    const saving = effK => Math.round(untreated * effK * hours * 0.6 / mainEer * price / 100) * 100;
+    const recov = effK => round(untreated * effK, 1);
+    const fmtN = n => n.toLocaleString('he-IL');
+    const opts = [];
+    const ducted = input.height >= 2.6;
+    const living = rooms.filter(r => r.kind !== 'mamad');
+
+    const erv = (name, extraCons, flow) => {
+      const z = sizeAir(FRESH_CATALOG.erv, flow || req);
+      return { key: 'erv', name,
+        equipment: [z.count + ' × מחליף אוויר ERV ' + fmtN(z.each) + ' מ"ק/ש\' (ליבת אנטלפיה, מסנני G4+F7)', 'אספקה לחדרי מגורים ושינה, יניקה מהמטבח, השירותים והמקלחות'],
+        cost: [Math.round(z.total * (t.group === 'res' ? 45 : 20) / 500) * 500, Math.round(z.total * (t.group === 'res' ? 70 : 35) / 500) * 500],
+        recoveredKw: recov(0.70 * (flow ? flow / req : 1)), savingYear: saving(0.70 * (flow ? flow / req : 1)),
+        pros: ['אוויר צח ומסונן כל הזמן, גם כשהחלונות סגורים', 'מחזיר כ-70% מאנרגיית הקירור והחימום של אוויר הפליטה', 'מוריד CO₂, לחות וריחות, ומצמצם אבק ואובך'],
+        cons: ['דורש תעלות ותקרה מונמכת'].concat(extraCons || []), 
+        brands: ['Mitsubishi Electric (Lossnay)', 'Daikin (VAM / Modular L)', 'LG (ERV)', 'Panasonic', 'Zehnder', 'Systemair', 'Vents', 'Blauberg'] };
+    };
+
+    if (t.group === 'res') {
+      opts.push(erv('מחליף אוויר מרכזי עם השבת אנרגיה (ERV) לכל הדירה', ['תחזוקת מסננים כל 3–6 חודשים']));
+      const n = living.length;
+      opts.push({ key: 'decentral', name: 'מחליפי אוויר חדריים ללא תעלות (Push-Pull)',
+        equipment: [n * 2 + ' יחידות (זוג לכל חדר × ' + n + ' חדרים), ‏30–60 מ"ק/ש\' ליחידה', 'קידוח Ø160 מ"מ בקיר חיצוני לכל יחידה'],
+        cost: [n * 2 * 1800, n * 2 * 2800], recoveredKw: recov(0.55), savingYear: saving(0.55),
+        pros: ['אין צורך בתעלות או בתקרה מונמכת', 'מתאים לשיפוץ בדירה קיימת', 'השבת חום ~60%–80% (מוחשי)'],
+        cons: ['קידוח בכל חדר בקיר החיצוני', 'רעש מאוורר בחדרי שינה', 'ללא השבת לחות – פחות טוב באקלים לח'],
+        brands: ['Vents (TwinFresh)', 'Blauberg', 'Lunos', 'Marley'] });
+      if (ducted && ['miniCentral', 'miniVrf'].includes(primaryKey)) {
+        const z = sizeAir(FRESH_CATALOG.fan, req);
+        opts.push({ key: 'mau', name: 'מאוורר אוויר צח מסונן לפלנום החזרה של המיני מרכזי',
+          equipment: ['מאוורר צינורי ' + fmtN(z.each) + ' מ"ק/ש\' + מסנן F7 + מדף אל-חוזר, מחובר לפלנום החזרה', 'פתח פליטה מבוקר (מאוורר אמבטיה/מטבח)'],
+          cost: [3500, 6500], recoveredKw: 0, savingYear: 0,
+          pros: ['הפתרון הזול והפשוט', 'משתמש בתעלות הקיימות של המיני מרכזי'],
+          cons: ['ללא השבת אנרגיה – מוסיף עומס על המזגן', 'עובד רק כשהמיני מרכזי פועל (או מאוורר נפרד)'],
+          brands: ['S&P', 'Systemair', 'Vents', 'ספקי תעלות מקומיים'] });
+      }
+    } else if (t.group === 'com') {
+      const o = erv('מחליפי אוויר ERV' + (['vrf', 'miniVrf'].includes(primaryKey) ? ' עם סליל DX מחובר ל-VRF' : ''), ['מעל ~4,000 מ"ק/ש\' – הרבה יחידות, עדיף DOAS']);
+      opts.push(o);
+      const d = sizeAir(FRESH_CATALOG.doas, req);
+      opts.push({ key: 'doas', name: 'יחידת טיפול באוויר צח (DOAS / FAHU) עם גלגל השבה',
+        equipment: [d.count + ' × יחידת אוויר צח ' + fmtN(d.each) + ' מ"ק/ש\' – גלגל אנטלפיה + סליל ' + (primaryKey.startsWith('chiller') ? 'מים קרים' : 'DX'), 'סליל קירור ~' + round(untreated * 0.3, 1) + ' קו"ט · אספקה ניטרלית (~20°C) לחללים', 'מאוורר פליטה מרכזי + חיישני CO₂ לוויסות ספיקה'],
+        cost: [Math.round(d.total * 30 / 1000) * 1000, Math.round(d.total * 55 / 1000) * 1000], recoveredKw: recov(0.70), savingYear: saving(0.70),
+        pros: ['טיפול מלא בלחות האוויר הצח – מתאים לאקלים לח', 'מוריד את כל עומס האוויר הצח מהמערכת הראשית', 'סינון מרכזי איכותי (F7–F9)', 'שליטה לפי CO₂ (DCV)'],
+        cons: ['עלות גבוהה', 'מקום על הגג או בחדר מכונות', 'תעלות אספקה ופליטה נפרדות'],
+        brands: ['Systemair', 'Swegon', 'Trox', 'Carrier', 'Daikin', 'יצרני מטפלי אוויר מקומיים'] });
+      const z = sizeAir(FRESH_CATALOG.fan, req);
+      opts.push({ key: 'mau', name: 'מפוחי אוויר צח מסוננים (ללא השבה)',
+        equipment: [z.count + ' × מפוח אספקה ' + fmtN(z.each) + ' מ"ק/ש\' + מסנן F7, אל תוך יחידות המיזוג', 'מפוחי פליטה מאוזנים'],
+        cost: [Math.round(z.total * 5 / 500) * 500, Math.round(z.total * 10 / 500) * 500], recoveredKw: 0, savingYear: 0,
+        pros: ['עלות נמוכה', 'פשוט לתחזוקה'], cons: ['כל עומס האוויר הצח נופל על מערכת המיזוג', 'עלות חשמל גבוהה יותר'],
+        brands: ['S&P', 'Systemair', 'Vents', 'ספקים מקומיים'] });
+    } else if (t.group === 'ind') {
+      const z = sizeAir(FRESH_CATALOG.fan, Math.max(req, loads.volume * 1));
+      opts.push({ key: 'mau', name: 'יחידת אוויר משלים מסונן (Make-up Air) + מפוחי פליטה',
+        equipment: [z.count + ' × יחידת אוויר משלים ' + fmtN(z.each) + ' מ"ק/ש\' (מסנני G4+F7)', 'מפוחי פליטה בגג – איזון ספיקות ולחץ חיובי קל במבנה'],
+        cost: [Math.round(z.total * 6 / 1000) * 1000, Math.round(z.total * 12 / 1000) * 1000], recoveredKw: 0, savingYear: 0,
+        pros: ['פינוי חום, אבק ואדים מתהליך הייצור', 'לחץ חיובי מונע חדירת אבק'], cons: ['ללא השבה – האוויר החם/הלח נכנס כעומס'],
+        brands: ['Systemair', 'S&P', 'ספקים מקומיים'] });
+      if (!reg.humid) opts.push({ key: 'evap', name: 'אוויר משלים אוופורטיבי (קירור מים)',
+        equipment: ['מצנני אוויר אוופורטיביים כאוויר משלים – ~' + fmtN(Math.round(z.total)) + ' מ"ק/ש\''],
+        cost: [Math.round(z.total * 3 / 1000) * 1000, Math.round(z.total * 6 / 1000) * 1000], recoveredKw: recov(0.5), savingYear: saving(0.5),
+        pros: ['מקרר את האוויר הצח באקלים יבש בעלות חשמל זניחה'], cons: ['מוסיף לחות', 'טיפול מים נגד לגיונלה'],
+        brands: ['מגוון יצרנים'] });
+      const clean = rooms.filter(r => r.kind === 'office').reduce((a, r) => a + r.area, 0);
+      const cleanFlow = Math.max(150, Math.round(clean * 0.9 * 3.6 + clean / 10 * 2.5 * 3.6));
+      opts.push(erv('השבת אנרגיה (ERV) לאזורים הנקיים – משרדים ' + (clean ? fmtN(Math.round(clean)) + ' מ"ר' : ''), ['לא מתאים לאוויר מזוהם מתהליך הייצור'], Math.min(cleanFlow, req)));
+    } else {
+      opts.push({ key: 'mau', name: 'אוויר צח מינימלי מסונן ללחץ חיובי בחדר',
+        equipment: ['מאוורר אספקה קטן + מסנן F7, ‏~' + Math.max(50, req) + ' מ"ק/ש\''],
+        cost: [2500, 5000], recoveredKw: 0, savingYear: 0,
+        pros: ['מונע חדירת אבק לציוד'], cons: ['אין צורך בספיקה גבוהה – לחות חיצונית היא עומס'],
+        brands: ['S&P', 'Vents'] });
+    }
+
+    const notes = [
+      'סינון: מסנן מקדים G4 + מסנן F7 (MERV 13) לפחות – חשוב בישראל בגלל אובך וסופות אבק. בקרבת כביש סואן אפשר להוסיף מסנן פחם.',
+      'יניקת אוויר צח במרחק 3 מ\' לפחות ממעבים, מפליטות, ארובות, חניונים ופחי אשפה.',
+      'יעד איכות אוויר: CO₂ מתחת ל-1,000 ppm. חיישן CO₂ בחדרי ישיבות, כיתות ואולמות מאפשר אוורור לפי דרישה (DCV) ומוריד צריכת אנרגיה ב-20%–40%.',
+    ];
+    if (reg.humid) notes.push('אקלים לח: עדיף ERV עם ליבת אנטלפיה (מעבירה גם לחות) על פני HRV רגיל, או DOAS שמייבש את האוויר הצח.');
+    if (t.group === 'res') notes.push('ממ"ד: מערכת הסינון (אב"כ) של פיקוד העורף מיועדת לחירום בלבד ואינה מערכת אוורור שוטפת.');
+    if (t.group === 'res' && F.mode === 'none') notes.push('נבחר אוורור טבעי בלבד. בדירות חדשות ואטומות מומלץ לשדרג למחליף אוויר. כשהחלונות סגורים ריכוז ה-CO₂ בחדר שינה יכול לעבור 2,000 ppm בלילה.');
+    if (t.group !== 'res' && F.mode === 'none') notes.push('במבנה ציבורי או מסחרי נדרש אוורור מכני לפי התקן. "ללא" חושב כאוויר צח לא מטופל.');
+
+    return { mode: F.mode, auto: F.auto, reqM3h: req, flowM3h: F.flowM3h, basis: F.basis, untreatedKw: round(untreated, 1),
+      recoveredKw: F.recoveredKw, doasCoilKw: F.doasCoilKw, heatRecoveredKw: F.heatRecoveredKw,
+      options: opts, notes, modeName: FRESH_MODES[F.mode] };
+  }
+
   function economics(sys, input, loads) {
     const S = SYSTEMS[sys];
     const reg = REGIONS[input.region];
@@ -431,7 +584,7 @@
     const input = Object.assign({
       buildingType: 'apartment', region: 'coastal', insulation: 'new', glazing: 'med',
       area: 120, rooms: 5, height: 2.7, floors: 1, mamad: true, roofExposed: null,
-      equipmentKw: null, people: null, strictTemp: false, elecPrice: 0.64,
+      equipmentKw: null, people: null, strictTemp: false, elecPrice: 0.64, freshAir: 'auto',
     }, raw || {});
     const errors = [];
     if (!BUILDING_TYPES[input.buildingType]) errors.push('סוג מבנה לא מוכר');
@@ -461,8 +614,9 @@
       return { key, ...SYSTEMS[key], brands: BRANDS[key], equipment: eq.items, warnings: eq.warnings, econ: economics(key, input, loads) };
     });
 
-    return { ok: true, input, loads, rooms, region: REGIONS[input.region], type: BUILDING_TYPES[input.buildingType], recommended: options[0], options, notes: sel.notes };
+    const freshAir = freshAirSolutions(input, loads, rooms, sel.primary);
+    return { ok: true, input, loads, rooms, region: REGIONS[input.region], type: BUILDING_TYPES[input.buildingType], recommended: options[0], options, notes: sel.notes, freshAir };
   }
 
-  return { design, computeLoads, defaultRooms, REGIONS, BUILDING_TYPES, INSULATION, GLAZING, CATALOG, SYSTEMS, BRANDS, KW_TO_BTU, KW_PER_TR };
+  return { design, FRESH_MODES, computeLoads, defaultRooms, REGIONS, BUILDING_TYPES, INSULATION, GLAZING, CATALOG, SYSTEMS, BRANDS, KW_TO_BTU, KW_PER_TR };
 });

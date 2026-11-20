@@ -32,7 +32,8 @@ test('משרדים 1,200 מ"ר → VRF + המלצת אוויר צח', () => {
   const r = H.design({ buildingType: 'office', area: 1200, rooms: 30, height: 3.2, floors: 3 });
   assert.strictEqual(r.recommended.key, 'vrf');
   assert.ok(r.loads.oaM3h > 0);
-  assert.ok(r.notes.some(n => /ERV|DOAS/.test(n)));
+  assert.strictEqual(r.freshAir.mode, 'erv');
+  assert.ok(r.freshAir.options.some(o => o.key === 'doas'));
 });
 
 test('משרדים 8,000 מ"ר → צ\'ילר עם לפחות 2 יחידות', () => {
@@ -81,6 +82,27 @@ test('קלט שגוי מחזיר שגיאות', () => {
   const r = H.design({ area: 0, rooms: 0, height: 1 });
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.errors.length, 3);
+});
+
+test('אוויר צח במגורים: ASHRAE 62.2 ו-ERV מוריד את העומס לעומת מאוורר ללא השבה', () => {
+  const erv = H.design({ area: 120, rooms: 5, freshAir: 'erv' });
+  const fan = H.design({ area: 120, rooms: 5, freshAir: 'mau' });
+  assert.strictEqual(erv.freshAir.reqM3h, Math.round((0.15 * 120 + 3.5 * 5) * 3.6));
+  assert.ok(erv.loads.peakKw < fan.loads.peakKw);
+  assert.ok(erv.freshAir.recoveredKw > 0 && fan.freshAir.recoveredKw === 0);
+});
+
+test('ללא אוורור מכני במגורים – אין ספיקת אוויר צח בעומסים', () => {
+  const r = H.design({ area: 120, rooms: 5, freshAir: 'none' });
+  assert.strictEqual(r.loads.fresh.flowM3h, 0);
+  assert.ok(r.freshAir.notes.some(n => /לשדרג/.test(n)));
+});
+
+test('משרדים גדולים – DOAS מוריד את עומס האוויר הצח מהמערכת הראשית', () => {
+  const r = H.design({ buildingType: 'office', area: 4000, rooms: 60, height: 3.2, floors: 4 });
+  assert.strictEqual(r.freshAir.mode, 'doas');
+  assert.strictEqual(r.loads.fresh.mainKw, 0);
+  assert.ok(r.freshAir.doasCoilKw > 0);
 });
 
 console.log('\n' + passed + ' בדיקות עברו');

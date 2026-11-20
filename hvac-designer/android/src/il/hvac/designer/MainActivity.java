@@ -5,6 +5,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
+import android.webkit.JavascriptInterface;
 import android.view.Window;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -36,9 +40,30 @@ public class MainActivity extends Activity {
                 return openExternal(Uri.parse(url));
             }
         });
+        web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
         setContentView(web);
         if (state != null) web.restoreState(state);
         else web.loadUrl("file:///android_asset/index.html");
+    }
+
+    /** גשר JavaScript: ייצוא הדוח ל-PDF דרך שירות ההדפסה של אנדרואיד ("שמירה כ-PDF"). */
+    private class PdfBridge {
+        @JavascriptInterface
+        public void print(final String jobName) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    PrintManager pm = (PrintManager) getSystemService(PRINT_SERVICE);
+                    String name = (jobName == null || jobName.isEmpty()) ? "HVAC report" : jobName;
+                    PrintDocumentAdapter adapter = web.createPrintDocumentAdapter(name);
+                    PrintAttributes attrs = new PrintAttributes.Builder()
+                            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                            .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+                            .build();
+                    pm.print(name, adapter, attrs);
+                }
+            });
+        }
     }
 
     /** קישורים חיצוניים (מקורות, יצרנים) נפתחים בדפדפן. */

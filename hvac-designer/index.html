@@ -129,6 +129,45 @@ details ul { margin: 6px 0 0; padding-inline-start: 18px; font-size: 0.85rem; }
 .assump table td, .assump table th { padding: 4px 8px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .toast { font-size: 0.85rem; color: var(--ok); }
+.print-only { display: none; }
+.fresh-mode { display: inline-block; margin-inline-start: 6px; }
+.rep-head h1 { font-family: var(--f-display); font-weight: 400; font-size: 1.6rem; margin: 0 0 2px; }
+.rep-head .meta { color: var(--muted); font-size: 0.85rem; margin: 0 0 10px; }
+.rep-head table td, .rep-head table th { padding: 3px 8px; font-size: 0.85rem; }
+
+@media print {
+  :root, :root[data-theme="dark"] {
+    --bg: #ffffff; --panel: #ffffff; --ink: #000000; --muted: #444c52; --line: #c9d2d8;
+    --ice: #0b6a8e; --ice-soft: #eaf5fa; --copper: #9c5222; --copper-soft: #f7ebe2;
+    --ok: #22663e; --warn: #8a5700; --warn-soft: #fdf6e7; color-scheme: light;
+  }
+  @page { size: A4; margin: 12mm 10mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-size: 11px; background: #fff; }
+  .wrap { max-width: none; padding: 0 !important; }
+  header.top, form.panel, .no-print, details summary { display: none !important; }
+  .print-only { display: block; }
+  .grid { display: block; }
+  .results { gap: 10px; }
+  section.block { padding: 10px 12px; border-radius: 6px; break-inside: avoid; page-break-inside: avoid; }
+  section.block.splittable { break-inside: auto; page-break-inside: auto; }
+  section.block > h2 { font-size: 1.05rem; margin-bottom: 6px; }
+  .reco { background: #fff; }
+  .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .stat { padding: 6px 8px; } .stat b { font-size: 1rem; }
+  .opts { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .opt { padding: 8px; break-inside: avoid; gap: 6px; }
+  .pc { grid-template-columns: 1fr; gap: 4px; }
+  section.block > h2 { break-after: avoid; page-break-after: avoid; }
+  section.block.page-start { break-before: page; page-break-before: always; }
+  td input { border: 0; padding: 0; background: transparent; }
+  tr { break-inside: avoid; }
+  footer.disc { font-size: 9px; }
+}
+@media (prefers-color-scheme: dark) { @media print { :root:not([data-theme="light"]) {
+  --bg: #ffffff; --panel: #ffffff; --ink: #000000; --muted: #444c52; --line: #c9d2d8;
+  --ice: #0b6a8e; --ice-soft: #eaf5fa; --copper: #9c5222; --ok: #22663e; --warn: #8a5700; --warn-soft: #fdf6e7; color-scheme: light; } } }
+
 footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-top: 1px solid var(--line); padding-top: 12px; max-width: 90ch; }
 @media (prefers-reduced-motion: no-preference) { .bar i { transition: width .3s ease; } }
 </style>
@@ -143,6 +182,7 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     <form class="panel" id="f" novalidate>
       <fieldset>
         <legend>נתוני המבנה</legend>
+        <label>שם הפרויקט / לקוח<input id="project" type="text" placeholder="לדוגמה: דירת משפחת כהן, רמת גן"></label>
         <label>סוג המבנה<select id="buildingType"></select></label>
         <div class="row2">
           <label>שטח כולל (מ"ר)<input id="area" type="number" min="8" step="1" value="120" inputmode="decimal"></label>
@@ -164,6 +204,12 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
         <label class="check" id="mamadWrap"><input type="checkbox" id="mamad" checked> יש ממ"ד</label>
       </fieldset>
 
+      <fieldset>
+        <legend>אוויר צח</legend>
+        <label>פתרון אוויר צח<select id="freshAir"></select></label>
+        <p class="hint">משפיע על עומסי המיזוג: השבת אנרגיה (ERV) או יחידת אוויר צח (DOAS) מקטינות את העומס על המערכת הראשית.</p>
+      </fieldset>
+
       <details id="adv">
         <summary>נתונים מתקדמים (אופציונלי)</summary>
         <fieldset style="margin-top:10px">
@@ -178,7 +224,8 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
 
       <ul class="errors" id="errors" hidden></ul>
       <div class="actions">
-        <button type="button" class="primary" id="copyBtn">העתקת סיכום</button>
+        <button type="button" class="primary" id="pdfBtn">ייצוא ל-PDF</button>
+        <button type="button" id="copyBtn">העתקת סיכום</button>
         <button type="button" id="resetRooms">איפוס חלוקת חדרים</button>
         <span class="toast" id="toast" role="status"></span>
       </div>
@@ -210,6 +257,8 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
   fill($('region'), H.REGIONS, 'coastal');
   fill($('insulation'), H.INSULATION, 'new');
   fill($('glazing'), H.GLAZING, 'med');
+  $('freshAir').innerHTML = Object.entries(H.FRESH_MODES).map(([k, v]) => '<option value="' + k + '">' + esc(v) + '</option>').join('');
+  $('freshAir').value = 'auto';
 
   let customRooms = null; // רשימת חדרים שנערכה ידנית
 
@@ -221,7 +270,7 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
       area: num('area'), rooms: num('rooms'), height: num('height'), floors: num('floors') || 1,
       roofExposed: $('roofExposed').checked, mamad: $('mamad').checked,
       people: num('people'), equipmentKw: num('equipmentKw'), elecPrice: num('elecPrice') || 0.64,
-      strictTemp: $('strictTemp').checked, roomList: customRooms,
+      strictTemp: $('strictTemp').checked, roomList: customRooms, freshAir: $('freshAir').value,
     };
   }
 
@@ -252,6 +301,17 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     const segColors = ['var(--seg1)', 'var(--seg2)', 'var(--seg3)', 'var(--seg4)', 'var(--seg5)'];
     const why = whyText(r);
     let h = '';
+    const i = r.input;
+    const proj = $('project').value.trim();
+    h += '<section class="block print-only rep-head"><h1>דוח תכנון מיזוג אוויר' + (proj ? ' – ' + esc(proj) : '') + '</h1>'
+      + '<p class="meta">הופק ב-' + new Date().toLocaleDateString('he-IL') + ' · מתכנן מיזוג – חישוב עומסים מקורב לתכנון ראשוני</p>'
+      + '<div class="tbl"><table><tbody>'
+      + '<tr><th>סוג מבנה</th><td>' + esc(r.type.name) + '</td><th>אזור</th><td>' + esc(r.region.name) + '</td></tr>'
+      + '<tr><th>שטח</th><td>' + fmt(i.area) + ' מ"ר</td><th>חדרים / חללים</th><td>' + r.rooms.length + '</td></tr>'
+      + '<tr><th>גובה תקרה</th><td>' + i.height + ' מ\'</td><th>קומות</th><td>' + i.floors + '</td></tr>'
+      + '<tr><th>בידוד</th><td>' + esc(H.INSULATION[i.insulation].name) + '</td><th>זיגוג</th><td>' + esc(H.GLAZING[i.glazing].name) + '</td></tr>'
+      + '<tr><th>אוויר צח</th><td colspan="3">' + esc(r.freshAir.modeName) + (r.freshAir.auto ? ' (נבחר אוטומטית)' : '') + '</td></tr>'
+      + '</tbody></table></div></section>';
 
     h += '<section class="block reco"><div class="eyebrow">המערכת המומלצת</div><h2 class="sys">' + esc(rec.name) + '</h2><p class="why">' + esc(why) + '</p>';
     h += '<div class="stats">'
@@ -269,7 +329,9 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
       + '<ul class="legend">' + L.breakdown.map((b, i) => '<li><span class="sw" style="background:' + segColors[i] + '"></span>' + esc(b.name) + ' <span class="num">' + fmt(b.kw, 1) + ' קו"ט · ' + Math.round(b.kw / total * 100) + '%</span></li>').join('') + '</ul>'
       + '<p class="assump" style="margin:10px 0 0">מוחשי ' + fmt(L.sensibleKw, 1) + ' קו"ט · כמוס ' + fmt(L.latentKw, 1) + ' קו"ט · SHR ' + L.shr + ' · ' + fmt(L.people) + ' אנשים' + (L.oaM3h ? ' · אוויר צח ' + fmt(L.oaM3h) + ' מ"ק/ש\'' : '') + '</p></section>';
 
-    h += '<section class="block"><h2>חלוקה לחדרים</h2><p class="assump" style="margin:-6px 0 10px">ניתן לערוך שם ושטח של כל חדר – החישוב מתעדכן.</p><div class="tbl"><table><thead><tr><th>חדר / חלל</th><th>שטח (מ"ר)</th><th>קו"ט</th><th>BTU/h</th><th>עילי מתאים</th><th>ספיקה (מ"ק/ש\')</th><th>תריסים</th></tr></thead><tbody>';
+    h += freshSection(r);
+
+    h += '<section class="block splittable"><h2>חלוקה לחדרים</h2><p class="assump no-print" style="margin:-6px 0 10px">ניתן לערוך שם ושטח של כל חדר – החישוב מתעדכן.</p><div class="tbl"><table><thead><tr><th>חדר / חלל</th><th>שטח (מ"ר)</th><th>קו"ט</th><th>BTU/h</th><th>עילי מתאים</th><th>ספיקה (מ"ק/ש\')</th><th>תריסים</th></tr></thead><tbody>';
     r.rooms.forEach((rm, i) => {
       const w = H.CATALOG.wallSplit.find(u => u.kw >= rm.loadKw);
       h += '<tr><td><input data-i="' + i + '" data-f="name" value="' + esc(rm.name) + '" aria-label="שם חדר"></td><td><input class="area" type="number" min="1" data-i="' + i + '" data-f="area" value="' + rm.area + '" aria-label="שטח"></td><td class="n">' + fmt(rm.loadKw, 2) + '</td><td class="n">' + fmt(rm.btu) + '</td><td>' + (w ? esc(w.label) : '<span style="color:var(--copper)">מעל 3 כ"ס – תעלתי/עומד</span>') + '</td><td class="n">' + fmt(rm.airM3h) + '</td><td class="n">' + rm.grilles + '</td></tr>';
@@ -277,7 +339,7 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     const sa = r.rooms.reduce((s, x) => s + x.area, 0), sk = r.rooms.reduce((s, x) => s + x.loadKw, 0);
     h += '</tbody><tfoot><tr><td>סה"כ</td><td class="n">' + fmt(sa) + '</td><td class="n">' + fmt(sk, 1) + '</td><td class="n">' + fmt(sk * H.KW_TO_BTU) + '</td><td colspan="3" style="font-weight:400;color:var(--muted)">סכום חדרים > עומס בו-זמני (לא כל החדרים בשיא באותה שעה)</td></tr></tfoot></table></div></section>';
 
-    h += '<section class="block"><h2>השוואת חלופות</h2><div class="opts">' + r.options.map((o, i) => optCard(o, i === 0)).join('') + '</div></section>';
+    h += '<section class="block splittable page-start"><h2>השוואת חלופות</h2><div class="opts">' + r.options.map((o, i) => optCard(o, i === 0)).join('') + '</div></section>';
 
     const allNotes = r.notes.concat(...r.options.map(o => o.warnings));
     if (allNotes.length) h += '<section class="block"><h2>הערות תכנון</h2><ul class="notes">' + allNotes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul></section>';
@@ -292,6 +354,30 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
       + '</tbody></table></div></section>';
 
     $('out').innerHTML = h;
+  }
+
+  function freshSection(r) {
+    const F = r.freshAir;
+    const sel = F.options.find(o => o.key === F.mode) || null;
+    let h = '<section class="block splittable"><h2>פתרון אוויר צח</h2>';
+    h += '<p class="assump" style="margin:-6px 0 12px">בחירה נוכחית: <b>' + esc(F.modeName) + '</b>' + (F.auto ? ' (נבחר אוטומטית)' : '') + ' · ' + esc(F.basis) + '</p>';
+    h += '<div class="stats">'
+      + stat('ספיקת אוויר צח נדרשת', fmt(F.reqM3h) + ' מ"ק/ש\'', fmt(F.reqM3h / 3.6) + ' ל\'/ש\'')
+      + stat('עומס אוויר צח לא מטופל', fmt(F.untreatedKw, 1) + ' קו"ט', fmt(F.untreatedKw * H.KW_TO_BTU) + ' BTU/h')
+      + stat('אנרגיה מוחזרת בשיא', fmt(F.recoveredKw, 1) + ' קו"ט', F.recoveredKw > 0 ? 'חימום: ' + fmt(F.heatRecoveredKw, 1) + ' קו"ט' : 'ללא השבה')
+      + (F.doasCoilKw ? stat('סליל יחידת האוויר הצח', fmt(F.doasCoilKw, 1) + ' קו"ט', 'מנותק מהמערכת הראשית') : '')
+      + (sel ? stat('חיסכון חשמל שנתי', '₪' + fmt(sel.savingYear), 'לעומת אוויר צח ללא השבה') : '')
+      + '</div>';
+    h += '<div class="opts" style="margin-top:14px">' + F.options.map(o => {
+      const on = o.key === F.mode;
+      return '<article class="opt' + (on ? ' is-reco' : '') + '"><div><span class="pill' + (on ? '' : ' alt') + '">' + (on ? 'נבחר בחישוב' : 'אפשרות') + '</span></div><h3>' + esc(o.name) + '</h3>'
+        + '<ul style="margin:0;padding-inline-start:18px;font-size:.86rem">' + o.equipment.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+        + '<dl class="kv"><dt>עלות מותקנת</dt><dd>₪' + fmt(o.cost[0]) + '–' + fmt(o.cost[1]) + '</dd><dt>השבת אנרגיה</dt><dd>' + (o.recoveredKw ? fmt(o.recoveredKw, 1) + ' קו"ט' : '—') + '</dd><dt>חיסכון שנתי</dt><dd>' + (o.savingYear ? '₪' + fmt(o.savingYear) : '—') + '</dd></dl>'
+        + '<div class="pc"><div class="p"><b>יתרונות</b><ul>' + o.pros.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div><div class="c"><b>חסרונות</b><ul>' + o.cons.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div></div>'
+        + '<div class="brands">מותגים: ' + esc(o.brands.join(' · ')) + '</div></article>';
+    }).join('') + '</div>';
+    h += '<ul class="notes" style="margin-top:14px">' + F.notes.map(n => '<li class="info">' + esc(n) + '</li>').join('') + '</ul></section>';
+    return h;
   }
 
   function stat(label, val, sub, cls) { return '<div class="stat' + (cls ? ' ' + cls : '') + '"><span>' + label + '</span><b>' + val + '</b><small>' + sub + '</small></div>'; }
@@ -331,6 +417,8 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
       '', 'מערכת מומלצת: ' + rec.name,
       ...rec.equipment.map(e => '  • ' + e.room + ': ' + e.unit),
       'עלות משוערת: ₪' + fmt(rec.econ.costMin) + '–' + fmt(rec.econ.costMax) + ' | חשמל: ~₪' + fmt(rec.econ.costYear) + ' בשנה',
+      '', 'אוויר צח: ' + r.freshAir.modeName + ' – ' + fmt(r.freshAir.reqM3h) + ' מ"ק/ש\'' + (r.freshAir.recoveredKw ? ', השבת אנרגיה ' + r.freshAir.recoveredKw + ' קו"ט' : ''),
+      ...((r.freshAir.options.find(o => o.key === r.freshAir.mode) || { equipment: [] }).equipment.map(e => '  • ' + e)),
       '', 'חלופות: ' + r.options.slice(1).map(o => o.short).join(', '),
       '', 'חדרים:', ...r.rooms.map(x => '  • ' + x.name + ' – ' + x.area + ' מ"ר – ' + x.loadKw + ' קו"ט (' + fmt(x.btu) + ' BTU/h)'),
     ];
@@ -340,6 +428,7 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
 
   // אירועים
   $('f').addEventListener('input', e => {
+    if (e.target.id === 'project') return;
     if (e.target.id === 'buildingType') { customRooms = null; syncTypeDefaults(); }
     if (['area', 'rooms', 'buildingType', 'mamad'].includes(e.target.id)) customRooms = null;
     run();
@@ -354,6 +443,20 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     if (el.dataset.f === 'area') $('area').value = Math.round(customRooms.reduce((s, x) => s + x.area, 0));
     run();
   });
+  // ייצוא PDF: באפליקציית אנדרואיד – דרך שירות ההדפסה ("שמירה כ-PDF"); בדפדפן – window.print()
+  $('pdfBtn').addEventListener('click', () => {
+    if (!last) return;
+    const proj = $('project').value.trim();
+    const name = 'דוח מיזוג' + (proj ? ' - ' + proj : '') + ' ' + new Date().toISOString().slice(0, 10);
+    const done = msg => { $('toast').textContent = msg; setTimeout(() => { $('toast').textContent = ''; }, 4000); };
+    render(last); // תאריך ושם פרויקט עדכניים בכותרת הדוח
+    document.querySelectorAll('#out details').forEach(d => { d.open = true; });
+    if (window.AndroidPdf && window.AndroidPdf.print) { window.AndroidPdf.print(name); done('בחרו "שמירה כ-PDF" במסך ההדפסה'); return; }
+    let framed = false; try { framed = window.self !== window.top; } catch (_) { framed = true; }
+    if (framed) { done('ייצוא PDF זמין באפליקציה או כשפותחים את index.html ישירות בדפדפן'); return; }
+    const t = document.title; document.title = name; window.print(); document.title = t;
+  });
+  $('project').addEventListener('input', () => { if (last) render(last); });
   $('resetRooms').addEventListener('click', () => { customRooms = null; run(); });
   $('copyBtn').addEventListener('click', () => {
     if (!last) return;
