@@ -130,6 +130,69 @@ details ul { margin: 6px 0 0; padding-inline-start: 18px; font-size: 0.85rem; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .toast { font-size: 0.85rem; color: var(--ok); }
 .print-only { display: none; }
+bdi.ltr { unicode-bidi: isolate; direction: ltr; }
+
+/* איורים */
+.art { width: 100%; height: auto; display: block; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+.art .bldg { fill: var(--panel); stroke: var(--muted); stroke-width: 2; }
+.art .wall { stroke: var(--muted); stroke-width: 1.5; }
+.art .wallthick { fill: var(--line); stroke: var(--muted); stroke-width: 1; }
+.art .ceil { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.art .gnd { stroke: var(--ink); stroke-width: 2; }
+.art .unit, .art .rack { fill: var(--panel); stroke: var(--ink); stroke-width: 1.4; }
+.art .rack { fill: var(--line); }
+.art .fan, .art .pump { fill: none; stroke: var(--ink); stroke-width: 1.2; }
+.art .wheel { fill: var(--ice-soft); stroke: var(--ink); stroke-width: 1.2; }
+.art .thin { stroke: var(--muted); stroke-width: 1; }
+.art .pad { stroke: var(--ice); stroke-width: 2; }
+.art .core { stroke: var(--muted); stroke-width: 1.2; }
+.art .coil { fill: none; stroke: var(--ice); stroke-width: 1.6; }
+.art .duct { fill: var(--ice-soft); stroke: var(--ice); stroke-width: 1.3; }
+.art .pipe { fill: none; stroke: var(--copper); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.art .cw { fill: none; stroke: var(--ice); stroke-width: 2.4; stroke-linecap: round; }
+.art .cwr { fill: none; stroke: var(--seg2); stroke-width: 2.4; stroke-dasharray: 5 3; }
+.art .nodef { fill: var(--copper); }
+.art .ar { stroke-width: 1.8; fill: none; }
+.art .arh { fill: none; stroke: var(--copper); stroke-width: 1.8; }
+.art .freshl { fill: none; stroke: var(--ok); stroke-width: 2.4; }
+.art .hotl { fill: none; stroke: var(--copper); stroke-width: 2.4; }
+.art .ar.cold { stroke: var(--ice); } .art .ah.cold { fill: var(--ice); }
+.art .ar.hot { stroke: var(--copper); } .art .ah.hot { fill: var(--copper); }
+.art .ar.fresh { stroke: var(--ok); } .art .ah.fresh { fill: var(--ok); }
+.art .ar.muted { stroke: var(--muted); stroke-dasharray: 3 3; } .art .ah.muted { fill: var(--muted); }
+.art .lbl { font-family: var(--f-body); font-size: 10.5px; fill: var(--ink); font-weight: 500; }
+.art .lbl.small { font-size: 9px; fill: var(--muted); font-weight: 400; }
+.art .lbl.tiny { font-size: 8px; font-weight: 700; }
+.art .lbl.muted { fill: var(--muted); font-size: 10px; letter-spacing: .04em; }
+.art .lbl.temp { font-family: var(--f-data); font-size: 12px; fill: var(--ice); font-weight: 500; }
+figure.how { margin: 0; display: grid; gap: 6px; }
+figure.how figcaption { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+.reco-art { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; align-items: center; margin: 4px 0 14px; }
+.reco-art figcaption { font-size: 0.9rem; }
+@media (max-width: 640px) { .reco-art { grid-template-columns: minmax(0, 1fr); } }
+
+/* פרויקטים */
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.badge { display: inline-block; min-width: 1.5em; padding: 0 6px; border-radius: 99px; background: var(--ice); color: var(--panel); font-size: 0.75rem; font-weight: 700; text-align: center; margin-inline-start: 4px; }
+.cur-proj { font-size: 0.82rem; color: var(--muted); }
+.overlay { position: fixed; inset: 0; background: rgba(8, 20, 28, 0.55); z-index: 50; display: grid; place-items: start center; overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+.sheet { background: var(--panel); color: var(--ink); border-radius: 12px; width: min(640px, 100%); padding: 18px; display: grid; gap: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.sheet-head h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.3rem; margin: 0; }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.plist li { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; }
+.plist li.current { border-color: var(--ice); }
+.plist .pn { font-weight: 700; overflow-wrap: anywhere; }
+.plist .pm { font-size: 0.8rem; color: var(--muted); grid-column: 1; }
+.plist .pb { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 6px; }
+.plist button { padding: 6px 10px; font-size: 0.85rem; }
+button.danger { color: var(--copper); border-color: var(--copper); }
+button.danger.armed { background: var(--copper); color: var(--panel); }
+.empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 16px; border: 1px dashed var(--line); border-radius: 9px; }
+.backup { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.backup textarea { font: 0.8rem/1.4 var(--f-data); direction: ltr; width: 100%; min-height: 90px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px; }
+.backup .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .fresh-mode { display: inline-block; margin-inline-start: 6px; }
 .rep-head h1 { font-family: var(--f-display); font-weight: 400; font-size: 1.6rem; margin: 0 0 2px; }
 .rep-head .meta { color: var(--muted); font-size: 0.85rem; margin: 0 0 10px; }
@@ -145,7 +208,9 @@ details ul { margin: 6px 0 0; padding-inline-start: 18px; font-size: 0.85rem; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-size: 11px; background: #fff; }
   .wrap { max-width: none; padding: 0 !important; }
-  header.top, form.panel, .no-print, details summary { display: none !important; }
+  header.top, form.panel, .no-print, details summary, .overlay { display: none !important; }
+  .art { max-height: 150px; width: auto; max-width: 100%; }
+  .opt .art { max-height: 110px; }
   .print-only { display: block; }
   .grid { display: block; }
   .results { gap: 10px; }
@@ -175,6 +240,10 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
 <div class="wrap">
   <header class="top">
     <h1>מתכנן מיזוג אוויר</h1>
+    <div class="top-actions">
+      <span class="cur-proj" id="curProj"></span>
+      <button type="button" id="openProjects">הפרויקטים שלי<span class="badge" id="projCount">0</span></button>
+    </div>
     <p>הזינו את נתוני המבנה – המערכת תחשב עומסי קירור וחימום ותמליץ על מערכת: עיליים, מיני מרכזי, VRF, יחידות גג או צ'ילר, לפי תנאי האקלים והשוק בישראל.</p>
   </header>
 
@@ -224,7 +293,8 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
 
       <ul class="errors" id="errors" hidden></ul>
       <div class="actions">
-        <button type="button" class="primary" id="pdfBtn">ייצוא ל-PDF</button>
+        <button type="button" class="primary" id="saveBtn">שמירת פרויקט</button>
+        <button type="button" id="pdfBtn">ייצוא ל-PDF</button>
         <button type="button" id="copyBtn">העתקת סיכום</button>
         <button type="button" id="resetRooms">איפוס חלוקת חדרים</button>
         <span class="toast" id="toast" role="status"></span>
@@ -234,6 +304,30 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     <main class="results" id="out" aria-live="polite"></main>
   </div>
 
+  <div class="overlay" id="projOverlay" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="projTitle">
+      <div class="sheet-head">
+        <h2 id="projTitle">הפרויקטים שלי</h2>
+        <button type="button" id="closeProjects" aria-label="סגירה">סגירה</button>
+      </div>
+      <div class="actions">
+        <button type="button" class="primary" id="newProject">פרויקט חדש</button>
+        <button type="button" id="saveAsNew">שמירה כפרויקט נפרד</button>
+      </div>
+      <ul class="plist" id="plist"></ul>
+      <div class="backup">
+        <b>גיבוי והעברה בין מכשירים</b>
+        <p class="hint" style="margin:0">"ייצוא" מעתיק או משתף את כל הפרויקטים כטקסט. כדי לשחזר, מדביקים את הטקסט בתיבה ולוחצים "ייבוא".</p>
+        <div class="row">
+          <button type="button" id="exportProjects">ייצוא כל הפרויקטים</button>
+          <button type="button" id="importProjects">ייבוא</button>
+          <span class="toast" id="ptoast" role="status"></span>
+        </div>
+        <textarea id="importBox" placeholder='הדביקו כאן גיבוי שהתחיל ב-{"app":"hvac-designer"...' aria-label="טקסט גיבוי"></textarea>
+      </div>
+    </div>
+  </div>
+
   <footer class="disc">
     הכלי מבצע חישוב עומסים מקורב (שיטת בלוק) לצורך תכנון ראשוני והשוואת חלופות. התפוקות, המחירים וסימוני ה"כ"ס" הם ערכים מקורבים לשוק הישראלי (2025–2026) ומשתנים בין יצרנים.
     לפני ביצוע נדרש חישוב עומסים מפורט חדר-חדר (ASHRAE / HAP / TRACE), בחירת ציוד לפי קטלוג יצרן ותכנון של מהנדס מיזוג אוויר. התקנה – על ידי טכנאי קירור מוסמך.
@@ -241,9 +335,15 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
 </div>
 
 <script src="hvac-engine.js"></script>
+<script src="illustrations.js"></script>
 <script>
 (function () {
   const H = window.HVAC;
+  const ART = window.HVAC_ART;
+  document.documentElement.setAttribute('dir', 'rtl');
+  document.documentElement.setAttribute('lang', 'he');
+  const ltr = s => '<bdi class="ltr" dir="ltr">' + s + '</bdi>';
+  const money = (a, b) => ltr('₪' + fmt(a) + '–' + fmt(b));
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = (n, d = 0) => Number(n).toLocaleString('he-IL', { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -261,6 +361,22 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
   $('freshAir').value = 'auto';
 
   let customRooms = null; // רשימת חדרים שנערכה ידנית
+  // אחסון: באפליקציית אנדרואיד – אחסון פנימי של האפליקציה (AndroidStore); בדפדפן – localStorage
+  const KEY = 'hvac.projects.v1', DRAFT = 'hvac.draft.v1';
+  const Store = {
+    get(k) {
+      try { if (window.AndroidStore) return window.AndroidStore.getItem(k) || null; } catch (_) {}
+      try { return localStorage.getItem(k); } catch (_) { return null; }
+    },
+    set(k, v) {
+      try { if (window.AndroidStore) { window.AndroidStore.setItem(k, v); return true; } } catch (_) {}
+      try { localStorage.setItem(k, v); return true; } catch (_) { return false; }
+    },
+  };
+  let memProjects = [];
+  let currentId = null;
+  const FIELDS = ['project', 'buildingType', 'area', 'rooms', 'height', 'floors', 'region', 'insulation', 'glazing', 'freshAir', 'people', 'equipmentKw', 'elecPrice'];
+  const CHECKS = ['roofExposed', 'mamad', 'strictTemp'];
 
   function num(id) { const v = parseFloat($(id).value); return isNaN(v) ? null : v; }
   function readInput() {
@@ -274,13 +390,13 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     };
   }
 
-  function syncTypeDefaults() {
+  function syncTypeDefaults(keepValues) {
     const t = H.BUILDING_TYPES[$('buildingType').value];
-    $('roofExposed').checked = t.roof;
+    if (!keepValues) $('roofExposed').checked = t.roof;
     $('mamadWrap').hidden = t.group !== 'res';
     $('roomsHint').textContent = t.group === 'res' ? 'במגורים – לפי הספירה הישראלית: הסלון נחשב חדר.' : (t.group === 'ind' ? 'חלל ראשון = האולם; השאר משרדים/חללים נלווים.' : 'כל חלל שדורש שליטה נפרדת (חדר, אזור).');
     const defaults = { apartment: [120, 5, 2.7, 1], house: [240, 6, 2.8, 2], office: [600, 12, 3.2, 2], retail: [350, 2, 4, 1], restaurant: [180, 2, 3.3, 1], education: [900, 10, 3.4, 2], clinic: [300, 10, 3, 1], industrial: [2000, 4, 8, 1], warehouse: [4000, 2, 10, 1], server: [40, 1, 3, 1] }[$('buildingType').value];
-    if (defaults) { $('area').value = defaults[0]; $('rooms').value = defaults[1]; $('height').value = defaults[2]; $('floors').value = defaults[3]; }
+    if (defaults && !keepValues) { $('area').value = defaults[0]; $('rooms').value = defaults[1]; $('height').value = defaults[2]; $('floors').value = defaults[3]; }
   }
 
   let last = null;
@@ -293,6 +409,7 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     errBox.hidden = true;
     last = r;
     render(r);
+    Store.set(DRAFT, JSON.stringify({ state: captureState(), currentId }));
   }
 
   function render(r) {
@@ -313,21 +430,22 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
       + '<tr><th>אוויר צח</th><td colspan="3">' + esc(r.freshAir.modeName) + (r.freshAir.auto ? ' (נבחר אוטומטית)' : '') + '</td></tr>'
       + '</tbody></table></div></section>';
 
-    h += '<section class="block reco"><div class="eyebrow">המערכת המומלצת</div><h2 class="sys">' + esc(rec.name) + '</h2><p class="why">' + esc(why) + '</p>';
+    h += '<section class="block reco"><div class="eyebrow">המערכת המומלצת</div><h2 class="sys">' + esc(rec.name) + '</h2><p class="why">' + esc(why) + '</p>'
+      + '<figure class="how reco-art">' + ART.system(rec.key) + '<figcaption><b>איך זה עובד: </b>' + esc(ART.HOW[rec.key] || '') + '</figcaption></figure>';
     h += '<div class="stats">'
-      + stat('עומס קירור שיא', fmt(L.peakKw, 1) + ' קו"ט', fmt(L.btu) + ' BTU/h')
-      + stat('עומס בו-זמני למערכת', fmt(L.blockKw, 1) + ' קו"ט', fmt(L.blockKw / H.KW_PER_TR, 1) + ' TR')
-      + stat('צפיפות עומס', fmt(L.wPerM2) + ' W/m²', fmt(L.m2PerTr, 0) + ' מ"ר לטון')
+      + stat('עומס קירור שיא', fmt(L.peakKw, 1) + ' קו"ט', ltr(fmt(L.btu) + ' BTU/h'))
+      + stat('עומס בו-זמני למערכת', fmt(L.blockKw, 1) + ' קו"ט', ltr(fmt(L.blockKw / H.KW_PER_TR, 1) + ' TR'))
+      + stat('צפיפות עומס', ltr(fmt(L.wPerM2) + ' W/m²'), fmt(L.m2PerTr, 0) + ' מ"ר לטון')
       + stat('עומס חימום', fmt(L.heatKw, 1) + ' קו"ט', 'חורף ' + r.region.tWinter + '°C', 'heat')
       + stat('הספק חשמלי', fmt(rec.econ.elecKw, 1) + ' קו"ט', rec.econ.threePhase ? 'חיבור תלת-פאזי' : 'חד-פאזי מספיק')
-      + stat('עלות מותקנת משוערת', '₪' + fmt(rec.econ.costMin / 1000) + 'K–' + fmt(rec.econ.costMax / 1000) + 'K', '≈ ₪' + fmt(rec.econ.costYear) + ' חשמל בשנה')
+      + stat('עלות מותקנת משוערת', ltr('₪' + fmt(rec.econ.costMin / 1000) + 'K–' + fmt(rec.econ.costMax / 1000) + 'K'), '≈ ' + ltr('₪' + fmt(rec.econ.costYear)) + ' חשמל בשנה')
       + '</div>';
     h += '<ul class="equip">' + rec.equipment.map(eqLi).join('') + '</ul></section>';
 
     h += '<section class="block"><h2>פירוק עומס הקירור</h2><div class="bar" role="img" aria-label="פירוק עומס">'
       + L.breakdown.map((b, i) => '<i style="width:' + (b.kw / total * 100).toFixed(1) + '%;background:' + segColors[i] + '" title="' + esc(b.name) + '"></i>').join('') + '</div>'
       + '<ul class="legend">' + L.breakdown.map((b, i) => '<li><span class="sw" style="background:' + segColors[i] + '"></span>' + esc(b.name) + ' <span class="num">' + fmt(b.kw, 1) + ' קו"ט · ' + Math.round(b.kw / total * 100) + '%</span></li>').join('') + '</ul>'
-      + '<p class="assump" style="margin:10px 0 0">מוחשי ' + fmt(L.sensibleKw, 1) + ' קו"ט · כמוס ' + fmt(L.latentKw, 1) + ' קו"ט · SHR ' + L.shr + ' · ' + fmt(L.people) + ' אנשים' + (L.oaM3h ? ' · אוויר צח ' + fmt(L.oaM3h) + ' מ"ק/ש\'' : '') + '</p></section>';
+      + '<p class="assump" style="margin:10px 0 0">מוחשי ' + fmt(L.sensibleKw, 1) + ' קו"ט · כמוס ' + fmt(L.latentKw, 1) + ' קו"ט · ' + ltr('SHR ' + L.shr) + ' · ' + fmt(L.people) + ' אנשים' + (L.oaM3h ? ' · אוויר צח ' + fmt(L.oaM3h) + ' מ"ק/ש\'' : '') + '</p></section>';
 
     h += freshSection(r);
 
@@ -363,16 +481,17 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     h += '<p class="assump" style="margin:-6px 0 12px">בחירה נוכחית: <b>' + esc(F.modeName) + '</b>' + (F.auto ? ' (נבחר אוטומטית)' : '') + ' · ' + esc(F.basis) + '</p>';
     h += '<div class="stats">'
       + stat('ספיקת אוויר צח נדרשת', fmt(F.reqM3h) + ' מ"ק/ש\'', fmt(F.reqM3h / 3.6) + ' ל\'/ש\'')
-      + stat('עומס אוויר צח לא מטופל', fmt(F.untreatedKw, 1) + ' קו"ט', fmt(F.untreatedKw * H.KW_TO_BTU) + ' BTU/h')
+      + stat('עומס אוויר צח לא מטופל', fmt(F.untreatedKw, 1) + ' קו"ט', ltr(fmt(F.untreatedKw * H.KW_TO_BTU) + ' BTU/h'))
       + stat('אנרגיה מוחזרת בשיא', fmt(F.recoveredKw, 1) + ' קו"ט', F.recoveredKw > 0 ? 'חימום: ' + fmt(F.heatRecoveredKw, 1) + ' קו"ט' : 'ללא השבה')
       + (F.doasCoilKw ? stat('סליל יחידת האוויר הצח', fmt(F.doasCoilKw, 1) + ' קו"ט', 'מנותק מהמערכת הראשית') : '')
-      + (sel ? stat('חיסכון חשמל שנתי', '₪' + fmt(sel.savingYear), 'לעומת אוויר צח ללא השבה') : '')
+      + (sel ? stat('חיסכון חשמל שנתי', ltr('₪' + fmt(sel.savingYear)), 'לעומת אוויר צח ללא השבה') : '')
       + '</div>';
     h += '<div class="opts" style="margin-top:14px">' + F.options.map(o => {
       const on = o.key === F.mode;
       return '<article class="opt' + (on ? ' is-reco' : '') + '"><div><span class="pill' + (on ? '' : ' alt') + '">' + (on ? 'נבחר בחישוב' : 'אפשרות') + '</span></div><h3>' + esc(o.name) + '</h3>'
+        + (ART.fresh(o.key) ? '<figure class="how">' + ART.fresh(o.key) + '<figcaption>' + esc(ART.HOW[o.key] || '') + '</figcaption></figure>' : '')
         + '<ul style="margin:0;padding-inline-start:18px;font-size:.86rem">' + o.equipment.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
-        + '<dl class="kv"><dt>עלות מותקנת</dt><dd>₪' + fmt(o.cost[0]) + '–' + fmt(o.cost[1]) + '</dd><dt>השבת אנרגיה</dt><dd>' + (o.recoveredKw ? fmt(o.recoveredKw, 1) + ' קו"ט' : '—') + '</dd><dt>חיסכון שנתי</dt><dd>' + (o.savingYear ? '₪' + fmt(o.savingYear) : '—') + '</dd></dl>'
+        + '<dl class="kv"><dt>עלות מותקנת</dt><dd>' + money(o.cost[0], o.cost[1]) + '</dd><dt>השבת אנרגיה</dt><dd>' + (o.recoveredKw ? fmt(o.recoveredKw, 1) + ' קו"ט' : '—') + '</dd><dt>חיסכון שנתי</dt><dd>' + (o.savingYear ? ltr('₪' + fmt(o.savingYear)) : '—') + '</dd></dl>'
         + '<div class="pc"><div class="p"><b>יתרונות</b><ul>' + o.pros.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div><div class="c"><b>חסרונות</b><ul>' + o.cons.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div></div>'
         + '<div class="brands">מותגים: ' + esc(o.brands.join(' · ')) + '</div></article>';
     }).join('') + '</div>';
@@ -386,7 +505,8 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
   function optCard(o, isReco) {
     const e = o.econ;
     return '<article class="opt' + (isReco ? ' is-reco' : '') + '"><div><span class="pill' + (isReco ? '' : ' alt') + '">' + (isReco ? 'מומלץ' : 'חלופה') + '</span></div><h3>' + esc(o.name) + '</h3>'
-      + '<dl class="kv"><dt>עלות מותקנת</dt><dd>₪' + fmt(e.costMin) + '–' + fmt(e.costMax) + '</dd><dt>יעילות (EER)</dt><dd>' + o.eer + '</dd><dt>הספק חשמלי</dt><dd>' + fmt(e.elecKw, 1) + ' קו"ט</dd><dt>צריכה שנתית</dt><dd>' + fmt(e.kwhYear) + ' קוט"ש ≈ ₪' + fmt(e.costYear) + '</dd></dl>'
+      + '<figure class="how">' + ART.system(o.key) + '<figcaption>' + esc(ART.HOW[o.key] || '') + '</figcaption></figure>'
+      + '<dl class="kv"><dt>עלות מותקנת</dt><dd>' + money(e.costMin, e.costMax) + '</dd><dt>יעילות (EER)</dt><dd>' + o.eer + '</dd><dt>הספק חשמלי</dt><dd>' + fmt(e.elecKw, 1) + ' קו"ט</dd><dt>צריכה שנתית</dt><dd>' + fmt(e.kwhYear) + ' קוט"ש ≈ ' + ltr('₪' + fmt(e.costYear)) + '</dd></dl>'
       + '<div class="pc"><div class="p"><b>יתרונות</b><ul>' + o.pros.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div><div class="c"><b>חסרונות</b><ul>' + o.cons.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div></div>'
       + (isReco ? '' : '<details><summary>פירוט ציוד</summary><ul>' + o.equipment.map(x => '<li>' + esc(x.room) + ': ' + esc(x.unit) + '</li>').join('') + '</ul></details>')
       + '<div class="brands">מותגים נפוצים בישראל: ' + esc(o.brands.join(' · ')) + '</div></article>';
@@ -428,7 +548,7 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
 
   // אירועים
   $('f').addEventListener('input', e => {
-    if (e.target.id === 'project') return;
+    if (e.target.id === 'project') { Store.set(DRAFT, JSON.stringify({ state: captureState(), currentId })); return; }
     if (e.target.id === 'buildingType') { customRooms = null; syncTypeDefaults(); }
     if (['area', 'rooms', 'buildingType', 'mamad'].includes(e.target.id)) customRooms = null;
     run();
@@ -473,7 +593,124 @@ footer.disc { font-size: 0.8rem; color: var(--muted); margin-top: 24px; border-t
     ta.remove(); done(ok ? 'הסיכום הועתק' : 'לא ניתן להעתיק – סמנו את הטקסט ידנית');
   }
 
-  syncTypeDefaults();
+  /* ---------- שמירת פרויקטים ופתיחתם ---------- */
+  function toast(msg, id) {
+    const el = $(id || 'toast'); el.textContent = msg;
+    clearTimeout(el._t); el._t = setTimeout(() => { el.textContent = ''; }, 3500);
+  }
+  function loadProjects() {
+    try { const v = JSON.parse(Store.get(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return memProjects; }
+  }
+  function storeProjects(list) { memProjects = list; return Store.set(KEY, JSON.stringify(list)); }
+  function captureState() {
+    const st = {};
+    FIELDS.forEach(f => { st[f] = $(f).value; });
+    CHECKS.forEach(f => { st[f] = $(f).checked; });
+    st.customRooms = customRooms;
+    return st;
+  }
+  function applyState(st) {
+    FIELDS.forEach(f => { if (st[f] != null && $(f)) $(f).value = st[f]; });
+    CHECKS.forEach(f => { if (st[f] != null) $(f).checked = !!st[f]; });
+    customRooms = Array.isArray(st.customRooms) ? st.customRooms : null;
+    syncTypeDefaults(true);
+  }
+  function updateProjUi() {
+    const list = loadProjects();
+    $('projCount').textContent = list.length;
+    const cur = list.find(p => p.id === currentId);
+    $('curProj').textContent = cur ? 'פרויקט פתוח: ' + cur.name : '';
+    $('saveBtn').textContent = cur ? 'עדכון הפרויקט' : 'שמירת פרויקט';
+  }
+  function saveProject(asNew) {
+    if (!last) { toast('תקנו את הנתונים לפני השמירה'); return; }
+    const list = loadProjects();
+    let name = $('project').value.trim();
+    if (!name) { name = last.type.name + ' ' + fmt(last.input.area) + ' מ"ר'; $('project').value = name; }
+    const id = (!asNew && currentId) || ('p' + Date.now().toString(36));
+    const entry = { id, name, savedAt: new Date().toISOString(), state: captureState(),
+      summary: { type: last.type.name, area: last.input.area, rooms: last.rooms.length, system: last.recommended.short, peakKw: last.loads.peakKw, region: last.region.name.split(' (')[0] } };
+    const i = list.findIndex(p => p.id === id);
+    if (i >= 0) list[i] = entry; else list.unshift(entry);
+    const ok = storeProjects(list);
+    currentId = id;
+    updateProjUi(); renderList();
+    Store.set(DRAFT, JSON.stringify({ state: captureState(), currentId }));
+    toast(ok ? (i >= 0 ? 'הפרויקט עודכן' : 'הפרויקט נשמר') : 'לא ניתן לשמור במכשיר הזה – השתמשו ב"ייצוא כל הפרויקטים"');
+  }
+  function renderList() {
+    const list = loadProjects();
+    if (!list.length) { $('plist').innerHTML = '<li class="empty" style="display:block">עדיין אין פרויקטים שמורים. מלאו את נתוני המבנה ולחצו "שמירת פרויקט".</li>'; return; }
+    $('plist').innerHTML = list.map(p => {
+      const sm = p.summary || {};
+      const d = new Date(p.savedAt);
+      return '<li class="' + (p.id === currentId ? 'current' : '') + '"><span class="pn">' + esc(p.name) + '</span>'
+        + '<span class="pm">' + esc(sm.type || '') + ' · ' + fmt(sm.area || 0) + ' מ"ר · ' + (sm.rooms || '') + ' חדרים · ' + esc(sm.system || '') + ' · ' + fmt(sm.peakKw || 0, 1) + ' קו"ט · ' + d.toLocaleDateString('he-IL') + '</span>'
+        + '<span class="pb"><button type="button" data-open="' + esc(p.id) + '">פתיחה</button><button type="button" class="danger" data-del="' + esc(p.id) + '">מחיקה</button></span></li>';
+    }).join('');
+  }
+  function openOverlay() { renderList(); $('projOverlay').hidden = false; $('closeProjects').focus(); }
+  function closeOverlay() { $('projOverlay').hidden = true; $('openProjects').focus(); }
+
+  $('saveBtn').addEventListener('click', () => saveProject(false));
+  $('saveAsNew').addEventListener('click', () => saveProject(true));
+  $('openProjects').addEventListener('click', openOverlay);
+  $('closeProjects').addEventListener('click', closeOverlay);
+  $('projOverlay').addEventListener('click', e => { if (e.target.id === 'projOverlay') closeOverlay(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('projOverlay').hidden) closeOverlay(); });
+  $('plist').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const list = loadProjects();
+    if (b.dataset.open) {
+      const p = list.find(x => x.id === b.dataset.open); if (!p) return;
+      applyState(p.state); currentId = p.id; run(); updateProjUi(); closeOverlay();
+      window.scrollTo(0, 0); toast('נפתח: ' + p.name);
+    } else if (b.dataset.del) {
+      if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'למחוק?'; setTimeout(() => { if (b.isConnected) { b.classList.remove('armed'); b.textContent = 'מחיקה'; } }, 3000); return; }
+      storeProjects(list.filter(x => x.id !== b.dataset.del));
+      if (currentId === b.dataset.del) currentId = null;
+      renderList(); updateProjUi(); toast('הפרויקט נמחק', 'ptoast');
+    }
+  });
+  $('newProject').addEventListener('click', () => {
+    currentId = null; customRooms = null;
+    $('project').value = ''; $('buildingType').value = 'apartment'; $('freshAir').value = 'auto';
+    ['people', 'equipmentKw'].forEach(f => { $(f).value = ''; }); $('strictTemp').checked = false;
+    syncTypeDefaults(); run(); updateProjUi(); closeOverlay(); window.scrollTo(0, 0);
+  });
+  $('exportProjects').addEventListener('click', () => {
+    const list = loadProjects();
+    if (!list.length) { toast('אין פרויקטים לייצוא', 'ptoast'); return; }
+    const text = JSON.stringify({ app: 'hvac-designer', version: 1, exportedAt: new Date().toISOString(), projects: list });
+    $('importBox').value = text;
+    if (window.AndroidStore && window.AndroidStore.share) { window.AndroidStore.share('גיבוי פרויקטי מיזוג', text); toast('בחרו לאן לשתף את הגיבוי', 'ptoast'); return; }
+    const sel = () => { $('importBox').select(); toast('הגיבוי מופיע בתיבה – העתיקו אותו', 'ptoast'); };
+    try { navigator.clipboard.writeText(text).then(() => toast('הגיבוי הועתק (' + list.length + ' פרויקטים)', 'ptoast'), sel); } catch (_) { sel(); }
+  });
+  $('importProjects').addEventListener('click', () => {
+    let data;
+    try { data = JSON.parse($('importBox').value.trim()); } catch (_) { toast('הטקסט אינו גיבוי תקין', 'ptoast'); return; }
+    if (!data || data.app !== 'hvac-designer' || !Array.isArray(data.projects)) { toast('זה לא גיבוי של מתכנן מיזוג', 'ptoast'); return; }
+    const list = loadProjects();
+    let added = 0;
+    data.projects.forEach(p => {
+      if (!p || !p.id || !p.state) return;
+      const i = list.findIndex(x => x.id === p.id);
+      if (i >= 0) list[i] = p; else { list.push(p); added++; }
+    });
+    storeProjects(list); renderList(); updateProjUi();
+    $('importBox').value = '';
+    toast('יובאו ' + data.projects.length + ' פרויקטים (' + added + ' חדשים)', 'ptoast');
+  });
+
+  // הפעלה: שחזור הטיוטה האחרונה (האפליקציה נפתחת במקום שבו עזבתם)
+  let draft = null;
+  try { draft = JSON.parse(Store.get(DRAFT) || 'null'); } catch (_) { draft = null; }
+  if (draft && draft.state) {
+    applyState(draft.state);
+    if (draft.currentId && loadProjects().some(p => p.id === draft.currentId)) currentId = draft.currentId;
+  } else syncTypeDefaults();
   run();
+  updateProjUi();
 })();
 </script>

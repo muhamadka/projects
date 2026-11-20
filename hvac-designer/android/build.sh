@@ -22,7 +22,7 @@ python3 make_icon.py "$B/res"
   cat ../index.html
   echo '</body></html>'
 } > "$B/assets/index.html"
-cp ../hvac-engine.js "$B/assets/"
+cp ../hvac-engine.js ../illustrations.js "$B/assets/"
 
 # 3. R.java + חבילת משאבים
 aapt package -f -m -J "$B/gen" -M AndroidManifest.xml -S "$B/res" -A "$B/assets" \

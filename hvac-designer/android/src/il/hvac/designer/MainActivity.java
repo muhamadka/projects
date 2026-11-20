@@ -2,6 +2,7 @@ package il.hvac.designer;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,6 +42,7 @@ public class MainActivity extends Activity {
             }
         });
         web.addJavascriptInterface(new PdfBridge(), "AndroidPdf");
+        web.addJavascriptInterface(new StoreBridge(), "AndroidStore");
         setContentView(web);
         if (state != null) web.restoreState(state);
         else web.loadUrl("file:///android_asset/index.html");
@@ -61,6 +63,31 @@ public class MainActivity extends Activity {
                             .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
                             .build();
                     pm.print(name, adapter, attrs);
+                }
+            });
+        }
+    }
+
+    /** גשר JavaScript: שמירת פרויקטים באחסון הפנימי של האפליקציה + שיתוף גיבוי. */
+    private class StoreBridge {
+        private SharedPreferences prefs() { return getSharedPreferences("hvac_projects", MODE_PRIVATE); }
+
+        @JavascriptInterface
+        public String getItem(String key) { return prefs().getString(key, null); }
+
+        @JavascriptInterface
+        public void setItem(String key, String value) { prefs().edit().putString(key, value).commit(); }
+
+        @JavascriptInterface
+        public void share(final String subject, final String text) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("text/plain");
+                    send.putExtra(Intent.EXTRA_SUBJECT, subject);
+                    send.putExtra(Intent.EXTRA_TEXT, text);
+                    try { startActivity(Intent.createChooser(send, subject)); } catch (Exception ignored) { }
                 }
             });
         }
